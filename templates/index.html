@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link href="{{ url_for('static', filename='css/index.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
@@ -13,214 +14,187 @@
 </style>
 
 <body>
-    <div class="topnav" id="myTopnav">
-  <a href="#home" class="active"><i class="fa fa-fw fa-home"></i> Home</a>
-  <a href="#news">News</a>
-  <a href="#contact">Contact</a>
-  <a href="#about">About</a>
-  <a href="javascript:void(0);" class="icon" onclick="myFunction()">
-    <i class="fa fa-bars"></i>
-  </a>
-</div>
 
-<div style="padding-left:16px">
-   <div id='container-index-main' class="container-fluid" style="width: 100vw">
-        <div class="row" style="width: 100%">
-            <div class="container" style="width: 25%">
+{% include "header.html" %}
+
+<div>
+    <div id='container-index-main' class="container-fluid">
+        <div class="row">
+            <div class="col-md-4 p-0 bg-light position-relative panel-border" style="height: calc(100vh - 54px)">
                 <div id="container-table-attendance" class="table-responsive">
-                    <table class="table table-hover table-bordered">
-                        <label>BẢNG ĐIỂM DANH - Ngày làm việc {{ data_attendances_date[2] }}</label>
-                        <tr>
-                            <th style="width: 5%">STT</th>
-     `                       <th>MSNV</th>
-                            <th style="width: 30%">Họ và Tên</th>
-                            <th>Buổi</th>
-                            <th>Giờ</th>
-                            <th>Trạng Thái</th>
-                            <th style="width: 20%">Avatar</th>
-                        </tr>
-                        {% for row in data_attendances_date[1] %}
-                            <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ row.ID_NUMBER_PERSON }}</td>
-                                <td>{% if row.MIDDLE_NAME == None %}
-                                        {{ row.LAST_NAME }} {{ row.FIRST_NAME }}
-                                    {% else %}
-                                        {{ row.LAST_NAME }} {{ row.MIDDLE_NAME }} {{ row.FIRST_NAME }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if row.DAY_SESSIOn == 1 %}
-                                        BUỔI SÁNG
-                                    {% elif row.DAY_SESSIOn == 2 %}
-                                        BUỔI CHIỀU
-                                    {% else %}
-                                        BUỔI TỐI
-                                    {% endif %}
-                                </td>
-                                <td>{{ row.TIME }}</td>
-                                <td>{{ row.STRING_STATUS }}</td>
-                            </tr>
-                        {% endfor %}
-                        <tr>
-                            <td>1</td>
-                            <td>Lê Hoàng Nhí</td>
-                            <td>Sáng</td>
-                            <td>7:00:00</td>
-                            <td>Checkin</td>
-                            <td><img src="{{ url_for('static', filename='img/a.jpg') }}" width="100%"></td>
-                        </tr>
-                    </table>
-                </div>
+                    <h3 class="p-3">BẢNG ĐIỂM DANH - Ngày làm việc 1/1/2021
+{#                        {{ data_attendances_date[0] }}#}
+                    </h3>
+                    <div class="table-wrapper px-3">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%" >STT</th>
+                                    <th>MSNV</th>
+                                    <th style="width: 30%">Họ và Tên</th>
+                                    <th>Buổi</th>
+                                    <th>Giờ</th>
+                                    <th>Trạng Thái</th>
+                                    <th style="width: 20%">Avatar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {{ page_data }}
+                                {% for row in data_attendances_date %}
+                                     <tr>
+                                        <td>{{ loop.index + 1 }}</td>
+                                        <td>{{ row["ID_NUMBER_PERSON"] }}</td>
+                                        <td>{{ row['NAME'] }}</td>
+                                        <td>{{ row['DAY_SESSION'] }}</td>
+                                        <td>{{ row['TIME'] }}</td>
+                                        <td>{{ row['STRING_STATUS'] }}</td>
+                                        <td><img src="data:image/JPEG;base64,{{ row.IMAGE_SOURCE | safe }}"
+                                             class="img-thumbnail" alt="..." style="width: 50px; height: 50px">
+{#                                            <img class="img-thumbnail" src="{{ url_for('static', filename='img/a.jpg') }}" style="width: 50px;height: 50px;">#}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
 
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div class="container" style="width: 50%">
+
+            <div class="col-md-6 p-3">
                 <img src="{{ url_for('video_feed') }}" width="100%">
             </div>
-            <div class="container" style=" width: 25%">
-                <h2>Chat Messages</h2>
-                <div class="container">
-                  <img src="{{ url_for('static', filename='img/a.jpg') }}" alt="Avatar" style="width:100%;">
-                  <p>Hello. How are you today?</p>
-                  <span class="time-right">11:00</span>
+
+            <div class="col-md-2 p-0 bg-light panel-border d-flex flex-column justify-content-end position-relative" style="height: calc(100vh - 54px)">
+                <div class="chatbot-container">
+                    <div class="d-flex flex-column justify-content-end">
+                        <div class="d-flex flex-row align-items-end bot-messsage mb-2">
+                            <div class="d-flex justify-content-center align-items-center avatar-icon">
+                                <img src="/static/img/chatbot-icon.png" alt="">
+                            </div>
+                            <div class="message">
+                                Lorem ipsum dolor sit amet
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-row align-items-end bot-messsage mb-2">
+                            <div class="d-flex justify-content-center align-items-center avatar-icon">
+                                <img src="/static/img/chatbot-icon.png" alt="">
+                            </div>
+                            <div class="message">
+                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Adipisci commodi cupiditate eaque fuga iste labore officia quam, recusandae similique ullam ut vel voluptas voluptatem. Ab assumenda aut consectetur cupiditate delectus deleniti dolores dolorum eaque excepturi fuga hic illum ipsam iste laboriosam libero maiores nesciunt, nihil non nulla odio odit, quae quos sapiente voluptas voluptatum? Expedita minus ratione repellat repudiandae ullam? Accusamus alias aliquid culpa dicta earum eum officia perspiciatis repudiandae tempore ullam! Animi beatae dignissimos iusto libero, officia, quis quos temporibus vel veniam vero voluptatem voluptates voluptatum. Adipisci assumenda, fugiat itaque laudantium nihil officiis quia quibusdam repellat sint voluptatibus voluptatum.
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-row align-items-end self-messsage mb-2">
+                            <div class="message">
+                                Hi!
+                            </div>
+                        </div>
+                        <div class="d-flex flex-row align-items-end self-messsage mb-2">
+                            <div class="message">
+                                Hello!
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="container darker">
-                  <img src="{{ url_for('static', filename='img/a.jpg') }}" alt="Avatar" class="right" style="width:100%;">
-                  <p>Hey! I'm fine. Thanks for asking!</p>
-                  <span class="time-left">11:01</span>
+                <div id="message-input-view" class="d-flex flex-row align-items-center px-2 py-3">
+                    <div class="w-100" style="padding-right: 5px">
+                        <input type="text" id="message-input" class="form-control w-100"/>
+                    </div>
+
+
+                    <div class="d-flex justify-content-center align-items-center send-icon">
+                        <i class="fa fa-paper-plane" aria-hidden="true"></i>
+                    </div>
                 </div>
 
-                <div class="container">
-                  <img src="{{ url_for('static', filename='img/a.jpg') }}" alt="Avatar" style="width:100%;">
-                  <p>Sweet! So, what do you wanna do today?</p>
-                  <span class="time-right">11:02</span>
-                </div>
-
-                <div class="container darker">
-                  <img src="{{ url_for('static', filename='img/a.jpg') }}" alt="Avatar" class="right" style="width:100%;">
-                  <p>Nah, I dunno. Play soccer.. or learn more coding perhaps?</p>
-                  <span class="time-left">11:05</span>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-function myFunction() {
-  var x = document.getElementById("myTopnav");
-  if (x.className === "topnav") {
-    x.className += " responsive";
-  } else {
-    x.className = "topnav";
-  }
-}
-</script>
-
-
-
-
 
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+        integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
+<script
+        src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+        crossorigin="anonymous"></script>
+
+<script src="{{ url_for('static', filename='js/search-bar.js') }}" type="text/javascript"></script>
+
+<script>
+
+    {#console.log({{ page_data }})#}
+
+    function myFunction() {
+        var x = document.getElementById("myTopnav");
+        if (x.className === "topnav") {
+            x.className += " responsive";
+        } else {
+            x.className = "topnav";
+        }
+    }
+
+    function getBase64Image(img) {
+        let canvas = document.createElement("canvas");
+        console.log(img)
+        console.log(canvas)
+        canvas.width = img.width;
+
+        canvas.height = img.height;
+
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        let dataURL = canvas.toDataURL("image/png");
+        {#return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");#}
+        return dataURL
+    }
+
+    $('#frame-register').hide()
+    {#$('#camera-frame-hidden').hide()#}
+
+    $('#capture-register').click(function () {
+        let base64 = getBase64Image(document.getElementById("camera-frame-hidden"));
+        console.log(base64)
+        $('#frame-register').attr("src", base64)
+        $('#frame-register').show()
+    })
+
+    $('#frame-reset').click(function () {
+        $('#frame-register').hide()
+    })
+
+    $('#summit-register').click(function (e) {
+        let img_base64 = getBase64Image(document.getElementById("frame-register"));
+        let json_img = {}
+        json_img['image_base64'] = img_base64
+        console.log(img_base64)
+        e.preventDefault()
+        $.ajax({
+            url: "{{ url_for('add_person_image') }}",
+            data: {"data": JSON.stringify(json_img)},
+            type: 'POST',
+            success: function (response) {
+                location.reload()
+            },
+            error: function (error) {
+                alert("Không thể thêm mới! Thử lại");
+            }
+        });
+    })
+
+
+</script>
+
 </html>
-
-
-{##}
-{##}
-{#client camera#}
-{##}
-
-
-{#<!DOCTYPE html>#}
-{#<html lang="en">#}
-{#<head>#}
-{#    <meta charset="UTF-8">#}
-{#    <title>Title</title>#}
-{##}
-{#    <style>#}
-{#    	#video {#}
-{#    		transform: rotateY(180deg);#}
-{#    		-webkit-transform:rotateY(180deg); /* Safari and Chrome */#}
-{#    		-moz-transform:rotateY(180deg); /* Firefox */#}
-{##}
-{#    	}#}
-{#    </style>#}
-{##}
-{#     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>#}
-{#     <script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.0/socket.io.js'></script>#}
-{#</head>#}
-{##}
-{#<body>#}
-{##}
-{#    <div id="container">#}
-{#    <video autoplay playsinline id="videoElement"></video>#}
-{#    <canvas id="canvas"  width="400" height="300"></canvas>#}
-{#    </div>#}
-{##}
-{#    <div class = 'video'>#}
-{#        <img id="photo"  width="400"  height="300">#}
-{#        <h1>video</h1>#}
-{#    </div>#}
-{##}
-{#    <script type="text/javascript" charset="utf-8">#}
-{##}
-{#        var socket = io.connect(window.location.protocol + '//' + document.domain + ':' + location.port);#}
-{#        socket.on('connect', function(){#}
-{#            console.log("Connected...!", socket.connected)#}
-{#        });#}
-{##}
-{##}
-{#        var canvas = document.getElementById('canvas');#}
-{#        var context = canvas.getContext('2d');#}
-{#        const video = document.querySelector("#videoElement");#}
-{##}
-{#        video.width = 400;#}
-{#        video.height = 300;#}
-{##}
-{##}
-{#        if (navigator.mediaDevices.getUserMedia) {#}
-{#            navigator.mediaDevices.getUserMedia({ video: true })#}
-{#            .then(function (stream) {#}
-{#                video.srcObject = stream;#}
-{#                video.play();#}
-{#            })#}
-{#            .catch(function (err0r) {#}
-{##}
-{#            });#}
-{#        }#}
-{##}
-{#        const FPS = 6;#}
-{#        setInterval(() => {#}
-{#            width=video.width;#}
-{#            height=video.height;#}
-{#            context.drawImage(video, 0, 0, width , height );#}
-{#            var data = canvas.toDataURL('image/jpeg', 0.5);#}
-{#            context.clearRect(0, 0, width,height );#}
-{#            socket.emit('image', data);#}
-{#        }, 1000/FPS);#}
-{##}
-{#        socket.on('response_back', function(image){#}
-{#                photo.setAttribute('src', image );#}
-{##}
-{#        });#}
-{##}
-{#    </script>#}
-{##}
-{##}
-{# </body>#}
-{##}
-{#</html>#}
-
-{#<html>#}
-{#  <head>#}
-{#    <title>Video Streaming Demonstration</title>#}
-{#  </head>#}
-{#  <body>#}
-{#    <h1>Video Streaming Demonstration</h1>#}
-{#    <img src="{{ url_for('video_feed') }}">#}
-{#  </body>#}
-{#</html>#}

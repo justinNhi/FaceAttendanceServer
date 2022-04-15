@@ -1,15 +1,18 @@
 import json
 import dlib
 import numpy as np
-from flask import Flask, render_template, Response, request, jsonify
+from flask import Flask, render_template, Response, request, jsonify, redirect, url_for
 from keras_vggface import VGGFace
 # from database_model import *
 from methods import *
 from FaceAligner import FaceAligner
 from PIL import Image, ImageFont, ImageDraw
 import tensorflow as tf
+from datetime import date, timedelta, datetime
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 
 
 def predict_guest(image):
@@ -54,19 +57,245 @@ def predict_guest(image):
 @app.route('/')
 def hello_world():  # put application's code here
     data_attendances_date_auto_for_day()
-
-    return render_template('index.html', data_attendances_date=data_attendances_date())
-
-
+    page_data= data_attendances_today()
+    print(page_data)
+    return render_template('index.html', data_attendances_date=page_data)
 @app.route('/register')
 def register():  # put application's code here
     data_attendances_date_auto_for_day()
-    return render_template('register.html', data_person_image=data_person_image())
+    page_num = 1
+    page_limit = 10
+
+    if 'page' in request.args:
+        page_num = int(request.args.get('page'))
+    if 'limit' in request.args:
+        page_limit = int(request.args.get('limit'))
+
+    page_data, max_page = data_person_image(page_num, page_limit)
+
+    paging_data = {
+        'page': page_num,
+        'limit': page_limit,
+        'total_page': max_page
+    }
+
+    return render_template('register.html', data_person_image=page_data, paging_data=paging_data)
+
 
 @app.route('/danhsachdiemdanh')
 def danhsachdiemdanh():  # put application's code here
     data_attendances_date_auto_for_day()
-    return render_template('attendaces.html', data_person_images=data_attendances_date())
+
+    tab = get_default_attendances_tab()
+    page_num = 1
+    page_limit = 10
+
+    if 'tab' in request.args:
+        tab = request.args.get('tab')
+    if 'page' in request.args:
+        page_num = int(request.args.get('page'))
+    if 'limit' in request.args:
+        page_limit = int(request.args.get('limit'))
+
+    page_data, max_page = data_attendances_date(page_num, page_limit)
+
+    paging_data = {
+        'tab': tab,
+        'page': page_num,
+        'limit': page_limit,
+        'total_page': max_page
+    }
+
+    return render_template('attendaces.html', data_person_images=page_data, paging_data=paging_data)
+
+
+@app.route('/bangchamcong')
+def bangchamcong():  # use month to query data
+
+    month = datetime.now().month
+    year = datetime.now().year
+
+    if 'month' in request.args:
+        month = int(request.args.get('month'))  # parse int is required
+    if 'year' in request.args:
+        year = int(request.args.get('year'))  # parse int is required
+
+
+    # if int(month) >= 2 and int(month) <= 12:
+    #     if len(str(int(month) - 1)) < 2:
+    #         month_1 = '0' + str(int(month) - 1)
+    #     else:
+    #         month_1 =str(int(month) - 1)
+    #     month_2 = str(int(month))
+    # else:
+    #     month_1 = '12'
+    #     month_2 = '01'
+    #
+    #
+    # if len(str(month)) < 2:
+    #     month = '0' + str(month)
+    #
+    # start_date = datetime.strptime('26/' + month_1  + '/' + str(year), '%d/%m/%Y')
+    # end_date = datetime.strptime('26/' + month_2  + '/' + str(year), '%d/%m/%Y')
+    #
+    #
+    #
+    # nguyen_van_a_attendaces = []
+    #
+    # for _date in (start_date + timedelta(n) for n in range((end_date - start_date).days)):
+    #     nguyen_van_a_attendaces.append({
+    #         "date": _date.strftime('%Y-%m-%d'),
+    #
+    #         "sa_status": True,  # Co mat
+    #         "sa_checkin": "7:00",
+    #         "sa_checkout": "11:00",
+    #
+    #         "ch_status": False,  # Vang
+    #         "ch_checkin": None,
+    #         "ch_checkout": None,
+    #
+    #     })
+    #
+    # nguyen_van_b_attendaces = []
+    # for _date in (start_date + timedelta(n) for n in range((end_date - start_date).days)):
+    #     nguyen_van_b_attendaces.append({
+    #         "date": _date.strftime('%Y-%m-%d'),
+    #
+    #         "sa_status": True,  # Co mat
+    #         "sa_checkin": "7:00",
+    #         "sa_checkout": "11:00",
+    #
+    #         "ch_status": True,  # Vang
+    #         "ch_checkin": '13:00',
+    #         "ch_checkout": '17:00',
+    #
+    #     })
+    #
+    # sample_data = {
+    #     "month": month,  # filter month
+    #     "year": year,  # filter year
+    #     "current_year": datetime.now().year,  # current system year
+    #     "start_date": '2021-02-26',
+    #     "end_date": '2021-03-26',
+    #     "data": [
+    #         {
+    #             "msnv": 1234,
+    #             "name": 'Nguyen Van A',
+    #             "attendances": nguyen_van_a_attendaces
+    #         },
+    #         {
+    #             "msnv": 12345,
+    #             "name": 'Nguyen Van B',
+    #             "attendances": nguyen_van_b_attendaces
+    #         },
+    #     ]
+    # }
+    sample_data = data_attendances_date_month_year(month, year)
+    print(sample_data)
+    print(month, year)
+
+    return render_template('month-attendaces.html', data=sample_data, data_json=json.dumps(sample_data))
+
+
+@app.route('/bangchamcongcanhan/<int:id_person>')
+def bangchamcongcanhan(id_person):  # use month and msnv to query data
+    month = datetime.now().month
+    year = datetime.now().year
+
+    if 'month' in request.args:
+        month = int(request.args.get('month'))  # parse int is required
+    if 'year' in request.args:
+        year = int(request.args.get('year'))  # parse int is required
+
+    # start_date = datetime.strptime('26/11/2021', '%d/%m/%Y')
+    # end_date = datetime.strptime('26/12/2021', '%d/%m/%Y')
+    #
+    # nguyen_van_a_attendaces = []
+    # for _date in (start_date + timedelta(n) for n in range((end_date - start_date).days)):
+    #     nguyen_van_a_attendaces.append({
+    #         "date": _date.strftime('%Y-%m-%d'),
+    #
+    #         "sa_status": True,  # Co mat
+    #         "sa_checkin": "7:00",
+    #         "sa_checkout": "11:00",
+    #
+    #         "ch_status": False,  # Vang
+    #         "ch_checkin": None,
+    #         "ch_checkout": None,
+    #
+    #     })
+    #
+    # sample_data = {
+    #     "msnv": 1234,
+    #     "name": 'Nguyen Van A',
+    #     "attendances": nguyen_van_a_attendaces,
+    #     "month": month,  # filter month
+    #     "year": year,  # filter year
+    #     "current_year": datetime.now().year,  # current system year
+    #     "start_date": '2021-11-26',
+    #     "end_date": '2021-12-26',
+    # }
+    sample_data = data_attendances_personnal_date_month_year(id_person, month, year)
+    print(sample_data)
+    print(month, year)
+
+    return render_template('personal-attendaces.html', data=sample_data, data_json=json.dumps(sample_data))
+
+
+@app.route('/danhsachnguoidung')
+def danhsachnguoidung():  # put application's code here
+
+    page_num = 1
+    page_limit = 10
+
+    if 'page' in request.args:
+        page_num = int(request.args.get('page'))
+    if 'limit' in request.args:
+        page_limit = int(request.args.get('limit'))
+
+    # use 'page_num' and 'page_limit' to query data
+
+    # page_data = [
+    #     {
+    #         "msnv": 1234,
+    #         "name": "Nguyen Van A",
+    #         "birth": '24/12/1999',
+    #         "phone": "0123456789",
+    #         "email": "abc@gmail.com",
+    #         "avatar": url_for('static', filename='img/mta.jpg'),  # base64 resource or url
+    #         "address": "123 abs street, CR, NK, CT",
+    #         "birth_place": "RG, KG",
+    #         "id_num": "371xxxx405",  # cmnd
+    #     },
+    #
+    # ]
+    page_data, total_page = data_person(page_num, page_limit)
+    paging_data = {
+        'page': 1,
+        'limit': 10,
+        'total_page': total_page
+    }
+    return render_template('user-list.html', data=page_data, data_json=json.dumps(page_data), paging_data=paging_data)
+
+
+@app.route('/chinhsuanguoidung', methods=['POST'])
+def chinhsuanguoidung():
+    data = request.form.to_dict(flat=True)
+    return jsonify(data)
+
+
+@app.route('/xoanguoidung/<msnv>', methods=['POST'])
+def xoanguoidung(msnv):  # delete user by msnv
+
+    status_code = 200
+
+    sample_response = {
+        "error": False,
+        "message": 'Xóa thành công'
+    }
+
+    return sample_response, status_code
+
 
 def gen_frames():
     while camera.isOpened():
@@ -182,18 +411,67 @@ def add_person_image():
     try:
         json_data_string = request.form['data']
         json_data = json.loads(json_data_string)
-        print(json_data)
         image = json_data['image_base64']
-        img_base64 = image.split(',')[-1]
-        print(img_base64)
-        img = base64.b64decode(img_base64)
+        ID_NUMBER_PERSON = json_data['ID_NUMBER_PERSON']
+        NAME = json_data['LAST_NAME']
+        FIRST_NAME = json_data['FIRST_NAME']
+        slit_name = NAME.split(' ')
+        if len(slit_name) > 1:
+            LAST_NAME = NAME.split(' ')[0]
+            MIDDLE_NAME = NAME.split(' ')[-1]
+            json_add_new_person = {
+                "ID_NUMBER_PERSON": ID_NUMBER_PERSON,
+                "FIRST_NAME": FIRST_NAME,
+                "MIDDLE_NAME": MIDDLE_NAME,
+                "LAST_NAME": LAST_NAME,
+            }
+        else:
+            LAST_NAME = NAME
+            json_add_new_person = {
+                "ID_NUMBER_PERSON": ID_NUMBER_PERSON,
+                "FIRST_NAME": FIRST_NAME,
+                "LAST_NAME": LAST_NAME,
+            }
 
-        img = Image.open(io.BytesIO(img))
-        img.show()
-        add_new_person_image((json_data_string))
+        add_new_person(json_add_new_person)
+        ID_PERSON = get_person_id_person(ID_NUMBER_PERSON)
+
+        img_base64 = image.split(',')[-1]
+
+        #image
+        img = base64.b64decode(img_base64)
+        img_save = Image.open(io.BytesIO(img)).convert("RGB")
+        buffered = BytesIO()
+        img_save.save(buffered, format="PNG")
+        img_str = base64.b64encode(buffered.getvalue())
+        json_add_new_person_image = {
+            'ID_PERSON': 22,
+            "PERSON_IMG": img_str
+        }
+        add_new_person_image(json_add_new_person_image)
+
+        #emb
+        img = Image.open(io.BytesIO(img)).convert("RGB")
+        image_arr = img.resize((224, 224))
+        face_array = asarray(image_arr)
+        faces = []
+        faces.append(face_array)
+        samples = asarray(faces, 'float32')
+        samples = preprocess_input(samples, version=2)
+        with graph.as_default():
+            emb = model.predict(samples)[0]
+        emb_byte = emb.tobytes()
+        json_add_new_person_emb = {
+            'ID_PERSON': ID_PERSON,
+            "PERSON_EMB": emb_byte
+        }
+        add_new_person_emb(json_add_new_person_emb)
 
         return json.dumps({"error_code": 0}), 200, {'ContentType': 'application/json'}
-    except:
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(e, exc_type, fname, exc_tb.tb_lineno)
         return {}, 400, {'ContentType': 'application/json'}
 
 

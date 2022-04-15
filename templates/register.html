@@ -2,97 +2,160 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-    <link href="{{ url_for('static', filename='css/index.css') }}" rel="stylesheet">
+    <title>Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="{{ url_for('static', filename='css/register.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-
 </head>
 <style>
 
 </style>
 
 <body>
-    <div class="topnav" id="myTopnav">
-  <a href="#home" class="active"><i class="fa fa-fw fa-home"></i> Home</a>
-  <a href="#news">News</a>
-  <a href="#contact">Contact</a>
-  <a href="#about">About</a>
-  <a href="javascript:void(0);" class="icon" onclick="myFunction()">
-    <i class="fa fa-bars"></i>
-  </a>
-</div>
-<br>
-<div style="padding-left:16px">
-   <div id='container-index-main' class="container-fluid" style="width: 100vw">
-        <div class="row" style="width: 100%">
-            <div class="container-fluid" style="width: 25%">
+
+{% include "header.html" %}
+
+<div>
+    <div id='container-index-main' class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 p-0 bg-light position-relative panel-border" style="height: calc(100vh - 54px)">
                 <div id="container-table-attendance" class="table-responsive">
-                    <br>
-                    <h3>DANH SÁCH NGƯỜI DÙNG</h3>
-                    <table class="table table-striped">
-                        <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>MSNV</th>
-                            <th>HỌ VÀ TÊN</th>
-                            <th>Avatar</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {% for row in data_person_image %}
+                    <h3 class="pt-3 px-3">DANH SÁCH NGƯỜI DÙNG</h3>
+                    <div class="mb-3 input-group px-3">
+                        <span class="input-group-text"><i class="fa fa-search" aria-hidden="true"></i></span>
+                        <input id="search-dsnd-input" type="text" aria-label="" class="form-control"
+                               placeholder="MSNV hoặc họ tên">
+                    </div>
+                    <div class="table-wrapper px-3">
+                        <table id="dsnd-table" class="table table-striped">
+                            <thead>
                             <tr>
-                                <td>{{ loop.index }}</td>
-                                <td>{{ row.ID_NUMBER_PERSON }}</td>
-                                <td>
-                                    {% if row.MIDDLE_NAME == 'None' %}
-                                        {{ row.LAST_NAME }} {{ row.FIRST_NAME }}
-                                    {% else %}
-                                        {{ row.LAST_NAME }} {{ row.MIDDLE_NAME }} {{ row.FIRST_NAME }}
-                                    {% endif %}
-                                </td>
-                                <td><img src="data:image/JPEG;base64,{{ row.IMAGE_SOURCE | safe }}" class="img-thumbnail" alt="..." style="width: 50px; height: 50px"></td>
-
+                                <th>STT</th>
+                                <th>MSNV</th>
+                                <th>HỌ VÀ TÊN</th>
+                                <th>Avatar</th>
                             </tr>
-                        {% endfor %}
-                        </tbody>
-                      </table>
+                            </thead>
+                            <tbody>
+                            {% for row in data_person_image %}
+                                <tr>
+                                    <td>{{ (paging_data.page - 1 ) * paging_data.limit + loop.index }}</td>
+                                    <td>{{ row.ID_NUMBER_PERSON }}</td>
+                                    <td>
+                                        {% if row.MIDDLE_NAME == 'None' %}
+                                            {{ row.LAST_NAME }} {{ row.FIRST_NAME }}
+                                        {% else %}
+                                            {{ row.LAST_NAME }} {{ row.MIDDLE_NAME }} {{ row.FIRST_NAME }}
+                                        {% endif %}
+                                    </td>
+                                    <td><img src="data:image/JPEG;base64,{{ row.IMAGE_SOURCE | safe }}"
+                                             class="img-thumbnail" alt="..." style="width: 50px; height: 50px"></td>
+
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 bg-light pagination-panel">
+                        <div class="d-flex justify-content-between" style="height: 38px;">
+                            <div class="d-flex justify-content-start align-items-center">
+                                Trang {{ paging_data.page }}/{{ paging_data.total_page }}
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <select class="form-select form-select-sm row-per-page"
+                                        aria-label="Default select example">
+                                    {% for row in range(10, 51, 10) %}
+                                        <option value="{{ row }}"
+                                                {% if paging_data.limit == row %}selected{% else %}{% endif %}>{{ row }}</option>
+                                    {% endfor %}
+                                </select>
+
+                                <nav aria-label="Page navigation example">
+                                    <ul class="pagination">
+
+                                        <li class="page-item {% if (paging_data.page - 1) < 1 %}disabled{% else %}{% endif %}">
+                                            <a class="page-link btn-prev" href="#" aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+
+                                        <li class="page-item disabled"><a class="page-link"
+                                                                          href="#">{{ paging_data.page }}</a></li>
+
+                                        <li class="page-item {% if (paging_data.page + 1) > paging_data.total_page %}
+                                        disabled
+{#                                        {% else %}#}
+                                        {% endif %}">
+                                            <a class="page-link btn-next" href="#" aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-            <div class="container-fluid" style="width: 50%">
+
+            <div class="col-md-6 p-3">
                 <img id="camera-frame" src="{{ url_for('video_register') }}" width="100%">
-                <img style="width: 224px; height: 224px; position: fixed; display: none" id="camera-frame-hidden" src="{{ url_for('video_register_hidden') }} ">
-
+                <img style="width: 224px; height: 224px; position: fixed; display: none" id="camera-frame-hidden"
+                     src="{{ url_for('video_register_hidden') }} ">
             </div>
-            <div class="container-fluid" style=" width: 25%">
-                <div class="mb-3 mt-3 input-group">
-                    <span class="input-group-text">Mã Số Nhân Viên</span>
-                    <input type="text" aria-label="" class="form-control">
-                </div>
-                <div class="mb-3 input-group">
-                    <div class="form-floating mb-3">
-                      <input type="text" class="form-control" id="floatingInput" placeholder="Họ và Tên Đệm">
-                      <label for="floatingInput">Họ và Tên Đệm</label>
+            <div class="col-md-3 p-3 px-5 bg-light panel-border d-flex flex-column justify-content-center align-items-center" style="height: calc(100vh - 54px)">
+                <form id="register-form">
+                    <div class="form-group">
+                        <label for="msnv">Mã số nhân viên</label>
+                        <input name="msnv" type="text" class="form-control required" id="msnv">
+                        <div class="invalid-feedback"></div>
                     </div>
-                    <div class="form-floating mb-3">
-                      <input type="text" class="form-control" id="floatingInput" placeholder="Tên">
-                      <label for="floatingInput">Tên</label>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-grid gap-2 col-6 mx-auto">
-                      <button id="capture-register" class="btn btn-success" type="button">Chụp Ảnh</button>
-                        <br>
-                        <img id="frame-register" src="" class="img-thumbnail " alt="..." style="width: 224px; height: 224px">
-                        <button id="frame-reset" class="btn btn-danger" type="button">Reset</button>
+                    <div class="mb-4 mt-3 row">
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="lastName">Họ và Tên Đệm</label>
+                                <input name="lastName" type="text" class="form-control required" id="lastName">
+                                <div class="invalid-feedback"></div>
+                             </div>
+                        </div>
+                        <div class="col-md-4" style="padding-left: 0;">
+                            <div class="form-group">
+                                <label for="firstName">Tên</label>
+                                <input name="firstName" type="text" class="form-control required" id="firstName">
+                                <div class="invalid-feedback"></div>
+                             </div>
+                        </div>
+
                     </div>
 
-                </div>
-                <div class="mb-3">
-                    <div class="d-grid gap-2">
-                        <button id="summit-register" type="submit" class="btn btn-success">ĐĂNG KÝ</button>
+                    <div class="mb-3 d-flex justify-content-center align-items-center">
+
+                        <div class="d-grid gap-2">
+
+                            <div id="img-viewer" style="position: relative;">
+                                <img id="default-thumbnail" src="/static/img/default-thumbnail.png" class="img-thumbnail"
+                                    alt="default-thumbnail" style="width: 224px; aspect-ratio: 1;">
+                                <img id="frame-register" src="" class="img-thumbnail custom-thumbnail" alt="...">
+                                <i id="frame-reset" class="fa fa-times-circle text-danger" aria-hidden="true"></i>
+                            </div>
+
+                            <div class="d-flex flex-row justify-content-center align-items-center take-photo-control">
+                                <button id="capture-register" class="btn btn-success" type="button">Chụp Ảnh</button>
+                            </div>
+
+                        </div>
+
                     </div>
-                </div>
+                    <div class="mb-3 mt-4">
+                        <div class="d-flex justify-content-center gap-2 control-btns">
+                            <button id="summit-register" type="submit" class="btn btn-success">Đăng ký</button>
+                            <input id="btn-reset" type="reset" class="btn btn-danger" name="Reset">
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -100,71 +163,125 @@
 
 
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+        integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
 <script
-  src="https://code.jquery.com/jquery-3.6.0.js"
-  integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
-  crossorigin="anonymous"></script>
+        src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+        crossorigin="anonymous"></script>
+
+<script src="{{ url_for('static', filename='js/search-bar.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('static', filename='js/form-validation.js') }}" type="text/javascript"></script>
 
 <script>
-function myFunction() {
-  var x = document.getElementById("myTopnav");
-  if (x.className === "topnav") {
-    x.className += " responsive";
-  } else {
-    x.className = "topnav";
-  }
-}
 
-function getBase64Image(img) {
-  let canvas = document.createElement("canvas");
-    console.log(img)
-    console.log(canvas)
-  canvas.width = img.width;
+    $(function () {
+        setupSearchBarOnTable($('#search-dsnd-input'), $('#dsnd-table'), searchByMsnvOrName);
 
-  canvas.height = img.height;
+        $('.btn-prev').click(function (event) {
+            event.preventDefault();
+            let page_limit = $('select.row-per-page').val();
+            window.location.href = `/register?page={{ paging_data.page - 1 }}&limit=${page_limit}`;
+        })
 
-  let ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0);
-  let dataURL = canvas.toDataURL("image/png");
-  {#return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");#}
-    return dataURL
-}
+        $('.btn-next').click(function (event) {
+            event.preventDefault();
+            let page_limit = $('select.row-per-page').val();
+            window.location.href = `/register?page={{ paging_data.page + 1 }}&limit=${page_limit}`;
+        })
 
-$('#frame-register').hide()
-{#$('#camera-frame-hidden').hide()#}
+        $('select.row-per-page').change(function () {
+            let page_limit = $(this).val();
+            window.location.href = `/register?page=1&limit=${page_limit}`;
+        })
 
-$('#capture-register').click(function (){
-    let base64 = getBase64Image(document.getElementById("camera-frame-hidden"));
-    console.log(base64)
-    $('#frame-register').attr("src",  base64)
-    $('#frame-register').show()
-})
+    })
 
-$('#frame-reset').click(function (){
+    function myFunction() {
+        var x = document.getElementById("myTopnav");
+        if (x.className === "topnav") {
+            x.className += " responsive";
+        } else {
+            x.className = "topnav";
+        }
+    }
+
+    function getBase64Image(img) {
+        let canvas = document.createElement("canvas");
+        console.log(img)
+        console.log(canvas)
+        canvas.width = img.width;
+
+        canvas.height = img.height;
+
+        let ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        let dataURL = canvas.toDataURL("image/png");
+        {#return dataURL.replace(/^data:image\/(png|jpg);base64,/, "");#}
+        return dataURL
+    }
+
     $('#frame-register').hide()
-})
+    {#$('#camera-frame-hidden').hide()#}
 
-$('#summit-register').click(function (e){
-    let img_base64 = getBase64Image(document.getElementById("frame-register"));
-    let json_img  = {}
+    $('#capture-register').click(function () {
+        let base64 = getBase64Image(document.getElementById("camera-frame-hidden"));
+        console.log(base64)
+        $('#frame-register').attr("src", base64)
+        $('#frame-register').show()
+    })
+
+    $('#frame-reset').click(function () {
+        $('#frame-register').hide()
+    })
+
+    $('#btn-reset').click(function () {
+        $('#frame-register').hide()
+    })
+
+    let config = {
+        'required': (value) => {
+            if (!value) {
+                return "Bắt buộc";
+            }
+        },
+    }
+    
+    setValidation('register-form', config, function(e) {
+        e.preventDefault();
+        let img_base64 = getBase64Image(document.getElementById("frame-register"));
+        let msnv = $('#msnv').val()
+        let firstname = $('#firstName').val()
+        let lastname = $('#lastName').val()
+        let json_img = {}
         json_img['image_base64'] = img_base64
-    console.log(img_base64)
-     e.preventDefault()
-     $.ajax({
-         url : "{{ url_for('add_person_image') }}",
-         data: {"data": JSON.stringify(json_img)},
-         type : 'POST',
-         success: function (response){
-             location.reload()
-         },
-         error: function (error){
-             alert("Không thể thêm mới! Thử lại");
-         }
-     });
-})
+        json_img['ID_NUMBER_PERSON'] = msnv
+        json_img['FIRST_NAME'] = firstname
+        json_img['LAST_NAME'] = lastname
+        console.log(img_base64)
+        console.log()
+        e.preventDefault();
+        $.ajax({
+            url: "{{ url_for('add_person_image') }}",
+            data: {"data": JSON.stringify(json_img)},
+            type: 'POST',
+            success: function (response) {
+                location.reload()
+            },
+            error: function (error) {
+                alert("Không thể thêm mới! Thử lại");
+            }
+        });
+    });
+
+
 
 
 </script>
