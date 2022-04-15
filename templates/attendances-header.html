@@ -1,0 +1,23 @@
+<div class="d-flex flex-row justify-content-between align-items-center">
+    <h3 class="pb-1 title p-3">BẢNG CHẤM CÔNG CÁ NHÂN THÁNG</h3>
+    <form action="" method="GET">
+        <div class="d-flex flex-row align-items-center gap-2">
+            <label for="month"><b>Tháng</b></label>
+            <select id="month" name="month" class="form-select" aria-label="Default select example" style="width: 80px">
+                {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if i == data.month %}selected{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+            <label for="year"><b>Năm</b></label>
+            <select id="year" name="year" class="form-select" aria-label="Default select example" style="width: 120px">
+                {% for i in range(data.current_year, data.current_year-50, -1) %}
+                    <option value="{{ i }}" {% if i == data.year %}selected{% endif %}>{{ i }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+        </div>
+    </form>
+
+
+</div>
+

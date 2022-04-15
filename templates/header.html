@@ -1,0 +1,11 @@
+
+<div class="topnav" id="myTopnav">
+    <a href="/" class="{% if url_for(request.endpoint, **request.view_args) == '/' %}active{% endif %}" ><i class="fa fa-fw fa-home"></i> Home</a>
+    <a href="/danhsachdiemdanh" class="{% if url_for(request.endpoint, **request.view_args) == '/danhsachdiemdanh' %}active{% endif %}">Danh sách điểm danh</a>
+    <a href="/danhsachnguoidung" class="{% if url_for(request.endpoint, **request.view_args) == '/danhsachnguoidung' %}active{% endif %}">Danh sách người dùng</a>
+    <a href="/bangchamcong" class="{% if '/bangchamcong' in url_for(request.endpoint, **request.view_args) %}active{% endif %}">Bảng chấm công</a>
+    <a href="/register" class="{% if url_for(request.endpoint, **request.view_args) == '/register' %}active{% endif %}">Register</a>
+    <a href="javascript:void(0);" class="icon" onclick="myFunction()">
+        <i class="fa fa-bars"></i>
+    </a>
+</div>

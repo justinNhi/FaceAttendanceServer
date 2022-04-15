@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bảng chấm công</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="{{ url_for('static', filename='css/attendaces.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+</head>
+<body class="bg-light">
+
+{% include "header.html" %}
+
+<div class="container-xl my-4">
+    <div class="card p-3 personal-card">
+{#        <h3 class="pb-1 title p-3">BẢNG CHẤM CÔNG CÁ NHÂN THÁNG</h3>#}
+        {% include "attendances-header.html" %}
+
+        <div class="p-3 pt-0 subtitle">Nhân viên</div>
+
+        <table id="main-table" class="table table-bordered table-calendar">
+            <thead></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+        integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+        integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+        crossorigin="anonymous"></script>
+<script
+        src="https://code.jquery.com/jquery-3.6.0.js"
+        integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"
+        integrity="sha512-qTXRIMyZIFb8iQcfjXWCO8+M5Tbc38Qi5WzdPOYZHIlZpzBHG3L3by84BBBOiRGiEb7KKtAOAs5qYdUiZiQNNQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script>
+    const data = JSON.parse(`{{ data_json | safe  }}`);
+
+    function renderTableData(attendance) {
+        let flag = attendance.sa_status + attendance.ch_status;
+        let attendance_date = moment(attendance.date, 'YYYY-MM-DD');
+
+        let colorClasses = ['error', 'warning', 'success'];
+
+        return `<td class="${colorClasses[flag]}">
+           <div class="mb-1 text-md"><b>${moment(attendance.date, 'YYYY-MM-DD').format('DD/MM/YYYY')}</b></div>
+           <div class="text-left"><b>SA:</b> ${attendance.sa_checkin} - ${attendance.sa_checkout}</div>
+           <div class="text-left"><b>CH:</b> ${attendance.ch_checkin} - ${attendance.ch_checkout}</div>
+        </td>`;
+    }
+
+    function renderTable(tableId) {
+        let table = $(`#${tableId}`);
+
+        {#console.log(data);#}
+
+        $('h3.title').html(`BẢNG CHẤM CÔNG CÁ NHÂN THÁNG ${data.month} - ${data.year}`)
+        $('div.subtitle').html(`Nhân viên: <b>${data.name} - ${data.msnv}</b>`)
+
+        let startDate = moment(data.start_date, "YYYY-MM-DD");
+        let endDate = moment(data.end_date, "YYYY-MM-DD");
+
+        let tableHead = `
+            <tr>
+                <th>Chủ nhật</th>
+                <th>Thứ hai</th>
+                <th>Thứ ba</th>
+                <th>Thứ tư</th>
+                <th>Thứ năm</th>
+                <th>Thứ sáu</th>
+                <th>Thứ bảy</th>
+            </tr>
+        `;
+
+        table.find('thead').html(tableHead)
+
+        let tableBody = '';
+
+        data.attendances.forEach((attendance, index) => {
+            let attendance_date = moment(attendance.date, 'YYYY-MM-DD');
+            if (index == 0) {
+                tableBody += `<tr>`;
+                for (let i = 1; i < attendance_date.day()+1; i++) {
+                    tableBody += `<td class="disabled"></td>`;
+                }
+                tableBody += renderTableData(attendance);
+                return
+            }
+
+            tableBody += renderTableData(attendance);
+
+            if (attendance_date.day() == 6) {
+                {#tableBody += `<td class="weekend"></td></tr>`#}
+                if (index < data.attendances.length - 1) {
+                    tableBody += `<tr>`
+                }
+            }
+
+        })
+        table.find('tbody').html(tableBody)
+    }
+
+    $(function () {
+        renderTable('main-table');
+    })
+</script>
+</html>
