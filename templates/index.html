@@ -22,7 +22,7 @@
         <div class="row">
             <div class="col-md-4 p-0 bg-light position-relative panel-border" style="height: calc(100vh - 54px)">
                 <div id="container-table-attendance" class="table-responsive">
-                    <h3 class="p-3">BẢNG ĐIỂM DANH - Ngày làm việc 1/1/2021
+                    <h3 class="p-3">BẢNG ĐIỂM DANH - Ngày làm việc {{ to_date }}
 {#                        {{ data_attendances_date[0] }}#}
                     </h3>
                     <div class="table-wrapper px-3">
@@ -43,7 +43,7 @@
                                 {% for row in data_attendances_date %}
                                      <tr>
                                         <td>{{ loop.index + 1 }}</td>
-                                        <td>{{ row["ID_NUMBER_PERSON"] }}</td>
+                                        <td>{{ row[""] }}</td>
                                         <td>{{ row['NAME'] }}</td>
                                         <td>{{ row['DAY_SESSION'] }}</td>
                                         <td>{{ row['TIME'] }}</td>

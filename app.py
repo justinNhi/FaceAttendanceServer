@@ -35,8 +35,8 @@ def predict_guest(image):
     ind_id = 0
     embs = data_person_label_embedding()
     for emb_person in embs:
-        id_person = emb_person['ID_PERSON']
-        id_number_person = emb_person['ID_NUMBER_PERSON']
+        id_person = emb_person['PERSON_ID']
+        id_number_person = emb_person['PERSON_ID_NUMBER']
         person_emb = emb_person['PERSON_EMB']
         full_name = emb_person['FULL_NAME']
         score = cosine(emb, person_emb)
@@ -57,9 +57,12 @@ def predict_guest(image):
 @app.route('/')
 def hello_world():  # put application's code here
     data_attendances_date_auto_for_day()
-    page_data= data_attendances_today()
+    page_data, to_date = data_attendances_today()
     print(page_data)
-    return render_template('index.html', data_attendances_date=page_data)
+    for a in page_data:
+        print(a)
+    return render_template('index.html', data_attendances_date=page_data, to_date = to_date)
+
 @app.route('/register')
 def register():  # put application's code here
     data_attendances_date_auto_for_day()
@@ -98,13 +101,13 @@ def danhsachdiemdanh():  # put application's code here
         page_limit = int(request.args.get('limit'))
 
     page_data, max_page = data_attendances_date(page_num, page_limit)
-
     paging_data = {
         'tab': tab,
         'page': page_num,
         'limit': page_limit,
         'total_page': max_page
     }
+
 
     return render_template('attendaces.html', data_person_images=page_data, paging_data=paging_data)
 
@@ -316,14 +319,22 @@ def gen_frames():
                 name, probability, id_person = predict_guest(faceAligned)  # get prediction return label and probability
                 if id_person != 0:
                     add_new_person_images(id_person, fa.align(img_copy, rect))
-                if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
-                    cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
-                    font_text = ImageFont.truetype(
-                        "font/simsun.ttc", 20, encoding="utf-8")
-                    img_pil = Image.fromarray(img)
-                    draw = ImageDraw.Draw(img_pil)
-                    draw.text((center_x - 100, center_y - 200), str(name), font=font_text, fill=(255, 0, 0))
-                    img = np.array(img_pil)
+                # if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
+                #     cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
+                #     font_text = ImageFont.truetype(
+                #         "font/simsun.ttc", 20, encoding="utf-8")
+                #     img_pil = Image.fromarray(img)
+                #     draw = ImageDraw.Draw(img_pil)
+                #     draw.text((center_x - 100, center_y - 200), str(name), font=font_text, fill=(255, 0, 0))
+                #     img = np.array(img_pil)
+                # if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
+                cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
+                font_text = ImageFont.truetype(
+                    "font/simsun.ttc", 20, encoding="utf-8")
+                img_pil = Image.fromarray(img)
+                draw = ImageDraw.Draw(img_pil)
+                draw.text((center_x - 100, center_y - 200), str(name), font=font_text, fill=(255, 0, 0))
+                img = np.array(img_pil)
         drawline(img, (center_x, center_y - 180), (center_x, center_y + 180), color)
         drawline(img, (center_x - 140, center_y), (center_x + 140, center_y), color)
         cv2.rectangle(img, (0, 0), (delta, H), color, -1)
@@ -412,7 +423,7 @@ def add_person_image():
         json_data_string = request.form['data']
         json_data = json.loads(json_data_string)
         image = json_data['image_base64']
-        ID_NUMBER_PERSON = json_data['ID_NUMBER_PERSON']
+        PERSON_ID_NUMBER = json_data['PERSON_ID_NUMBER']
         NAME = json_data['LAST_NAME']
         FIRST_NAME = json_data['FIRST_NAME']
         slit_name = NAME.split(' ')
@@ -420,21 +431,23 @@ def add_person_image():
             LAST_NAME = NAME.split(' ')[0]
             MIDDLE_NAME = NAME.split(' ')[-1]
             json_add_new_person = {
-                "ID_NUMBER_PERSON": ID_NUMBER_PERSON,
-                "FIRST_NAME": FIRST_NAME,
-                "MIDDLE_NAME": MIDDLE_NAME,
-                "LAST_NAME": LAST_NAME,
+                "PERSON_ID_NUMBER": PERSON_ID_NUMBER,
+                "PERSON_FIRST_NAME": FIRST_NAME,
+                "PERSON_MIDLE_NAME": MIDDLE_NAME,
+                "PERSON_LAST_NAME": LAST_NAME,
             }
         else:
             LAST_NAME = NAME
             json_add_new_person = {
-                "ID_NUMBER_PERSON": ID_NUMBER_PERSON,
-                "FIRST_NAME": FIRST_NAME,
-                "LAST_NAME": LAST_NAME,
+                "PERSON_ID_NUMBER": PERSON_ID_NUMBER,
+                "PERSON_FIRST_NAME": FIRST_NAME,
+                "PERSON_MIDLE_NAME": None,
+                "PERSON_LAST_NAME": LAST_NAME,
             }
 
         add_new_person(json_add_new_person)
-        ID_PERSON = get_person_id_person(ID_NUMBER_PERSON)
+
+        PERSON_ID = get_person_PERSON_ID(PERSON_ID_NUMBER)
 
         img_base64 = image.split(',')[-1]
 
@@ -445,8 +458,10 @@ def add_person_image():
         img_save.save(buffered, format="PNG")
         img_str = base64.b64encode(buffered.getvalue())
         json_add_new_person_image = {
-            'ID_PERSON': 22,
-            "PERSON_IMG": img_str
+            'PERSON_ID': PERSON_ID,
+            "PERSON_IMAGE_BASE64": img_str,
+            'PERSON_IMAGE':img_str,
+            "USED_STATUS": 1
         }
         add_new_person_image(json_add_new_person_image)
 
@@ -462,8 +477,13 @@ def add_person_image():
             emb = model.predict(samples)[0]
         emb_byte = emb.tobytes()
         json_add_new_person_emb = {
-            'ID_PERSON': ID_PERSON,
-            "PERSON_EMB": emb_byte
+            'PERSON_ID': PERSON_ID,
+            'PERSON_EMB_NO': 1,
+            "PERSON_EMB_BASE64": emb_byte,
+            'PERSON_EMB':emb_byte,
+            "PERSON_IMAGE_BASE64": img_str,
+            'PERSON_EMB_CREATE_DATE': datetime.today().strftime("%d/%m/%Y %H:%M:%S"),
+            "USED_STATUS": 1
         }
         add_new_person_emb(json_add_new_person_emb)
 
@@ -473,6 +493,90 @@ def add_person_image():
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
         print(e, exc_type, fname, exc_tb.tb_lineno)
         return {}, 400, {'ContentType': 'application/json'}
+
+
+@app.route('/api_face_recognition', methods=['POST'])
+def api_face_recognition():
+    person_id = 0
+    person_name = ''
+    error_code = 404
+    msg = " fail to call .... "
+    try:
+        json = request.get_json()
+        # print(json)
+        data = json['data']
+        print(data)
+        student_image = data['SEND_IMAGE']
+        # print(student_image)
+        str_base64 = student_image.split(',')[-1]
+        str_decode_base64 = base64.b64decode(str_base64)
+
+        # im_file = BytesIO(str_decode_base64)  # convert image to file-like object
+        # img = Image.open(im_file)
+
+        im_arr = np.frombuffer(str_decode_base64, dtype=np.uint8)  # im_arr is one-dim Numpy array
+        img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
+
+        img = cv2.resize(img, (W, H))
+        img = cv2.flip(img, 1)
+        img_copy = img.copy()
+        # img_copy = img_copy[0:H, delta:W - delta]
+        rects = detector(img)  # get face detection from Dlib
+        blur = cv2.GaussianBlur(img, (15, 15), 0)
+        img[mask_back == 0] = blur[mask_back == 0]
+        cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, color, thickness=1)
+        if len(rects) > 0:
+            for rect in rects:
+                faceAligned = fa.align(img, rect)  # processing face aligned
+                # shapes = predictor(img, rect)  # get shape point ( 68 points dlib)
+                # nose_x, nose_y = shapes.part(33).x, shapes.part(33).y  # get point 33 x, y
+                name, probability, id_person = predict_guest(faceAligned)  # get prediction return label and probability
+                person_name = name
+                person_id = id_person
+        #
+        #         if id_person != 0:
+        #             add_new_person_images(id_person, fa.align(img_copy, rect))
+        #         # if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
+        #         #     cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
+        #         #     font_text = ImageFont.truetype(
+        #         #         "font/simsun.ttc", 20, encoding="utf-8")
+        #         #     img_pil = Image.fromarray(img)
+        #         #     draw = ImageDraw.Draw(img_pil)
+        #         #     draw.text((center_x - 100, center_y - 200), str(name), font=font_text, fill=(255, 0, 0))
+        #         #     img = np.array(img_pil)
+        #         # if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
+        #         cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
+        #         font_text = ImageFont.truetype(
+        #             "font/simsun.ttc", 20, encoding="utf-8")
+        #         img_pil = Image.fromarray(img)
+        #         draw = ImageDraw.Draw(img_pil)
+        #         draw.text((center_x - 100, center_y - 200), str(name), font=font_text, fill=(255, 0, 0))
+        #         img = np.array(img_pil)
+        # drawline(img, (center_x, center_y - 180), (center_x, center_y + 180), color)
+        # drawline(img, (center_x - 140, center_y), (center_x + 140, center_y), color)
+        # cv2.rectangle(img, (0, 0), (delta, H), color, -1)
+        # cv2.rectangle(img, (W - delta, 0), (W, H), color, -1)
+        # ret, buffer = cv2.imencode('.jpg', img)
+        # img = buffer.tobytes()
+        # error_code = 200
+        # msg = 'successful !'
+        # im_b64 = base64.b64encode(img)
+
+
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(e, exc_type, fname, exc_tb.tb_lineno)
+        error_code = 400
+        msg = 'Bad Request None STUDENT_ID_NUMBER ' + str(e)
+        im_b64 = ''
+
+    return {"errorCode": error_code, "message": msg, "data": {
+        'PERSON_ID': person_id,
+        'PERSON_NAME': person_name,
+    }}
+
+
 
 
 if __name__ == '__main__':
@@ -493,3 +597,4 @@ if __name__ == '__main__':
     fa = FaceAligner(desiredFaceWidth=150, desiredLeftEye=(0.28, 0.28))
     print(app.url_map)
     app.run(host='0.0.0.0', port=7770, debug=True, use_reloader=False)
+

@@ -42,12 +42,12 @@
                             </tr>
                             {% for row in data_person_images[0] %}
                                 <tr>
-                                    <td>{{ (paging_data.page-1)*paging_data.limit + loop.index }}</td>
-                                    <td>{{ row.ID_NUMBER_PERSON }}</td>
-                                    <td>{% if row.MIDDLE_NAME == None %}
-                                        {{ row.LAST_NAME }} {{ row.FIRST_NAME }}
+                                    <td>{{ (paging_data.page - 1 )*paging_data.limit + loop.index }}</td>
+                                    <td>{{ row.PERSON_ID_NUMBER }}</td>
+                                    <td>{% if row.PERSON_MIDLE_NAME == None %}
+                                        {{ row.PERSON_LAST_NAME }} {{ row.PERSON_FIRST_NAME }}
                                     {% else %}
-                                        {{ row.LAST_NAME }} {{ row.MIDDLE_NAME }} {{ row.FIRST_NAME }}
+                                        {{ row.PERSON_LAST_NAME }} {{ row.PERSON_MIDLE_NAME }} {{ row.PERSON_FIRST_NAME }}
                                     {% endif %}
                                     </td>
 
@@ -94,12 +94,12 @@
                             </tr>
                             {% for row in data_person_images[1] %}
                                 <tr>
-                                    <td>{{ (paging_data.page - 1)*paging_data.limit + loop.index }}</td>
-                                    <td>{{ row.ID_NUMBER_PERSON }}</td>
-                                    <td>{% if row.MIDDLE_NAME == None %}
-                                        {{ row.LAST_NAME }} {{ row.FIRST_NAME }}
+                                    <td>{{ (paging_data.page - 1) * paging_data.limit + loop.index }}</td>
+                                    <td>{{ row.PERSON_ID_NUMBER }}</td>
+                                    <td>{% if row.PERSON_MIDLE_NAME == None %}
+                                        {{ row.PERSON_LAST_NAME }} {{ row.PERSON_FIRST_NAME }}
                                     {% else %}
-                                        {{ row.LAST_NAME }} {{ row.MIDDLE_NAME }} {{ row.FIRST_NAME }}
+                                        {{ row.PERSON_LAST_NAME }} {{ row.PERSON_MIDLE_NAME }} {{ row.PERSON_FIRST_NAME }}
                                     {% endif %}
                                     </td>
 
@@ -140,7 +140,7 @@
                 <nav aria-label="Page navigation example">
                     <ul class="pagination">
 
-                        <li class="page-item {% if paging_data.page-1 < 1 %}disabled{% else %}{% endif %}">
+                        <li class="page-item {% if (paging_data.page) - 1  < 1 %}disabled{% else %}{% endif %}">
                             <a class="page-link btn-prev" href="#" aria-label="Previous">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
