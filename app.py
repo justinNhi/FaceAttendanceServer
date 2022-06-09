@@ -3,7 +3,8 @@ import dlib
 import numpy as np
 from flask import Flask, render_template, Response, request, jsonify, redirect, url_for
 from keras_vggface import VGGFace
-# from database_model import *
+# from database_model import
+import new_data_models
 from methods import *
 from FaceAligner import FaceAligner
 from PIL import Image, ImageFont, ImageDraw
@@ -12,6 +13,15 @@ from datetime import date, timedelta, datetime
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+
+@app.route('/return_date_today_attendance', methods=['POST'])
+def return_date_today_attendance():
+    date_today = date.today()
+    json_send = new_data_models.return_date_today_attendance(date_today)
+
+    return json.dumps(json_send)
+    # return json_send
 
 
 
@@ -62,6 +72,7 @@ def hello_world():  # put application's code here
     for a in page_data:
         print(a)
     return render_template('index.html', data_attendances_date=page_data, to_date = to_date)
+
 
 @app.route('/register')
 def register():  # put application's code here
@@ -499,13 +510,13 @@ def add_person_image():
 def api_face_recognition():
     person_id = 0
     person_name = ''
-    error_code = 404
+    error_code = 403
     msg = " fail to call .... "
     try:
         json = request.get_json()
         # print(json)
         data = json['data']
-        print(data)
+        # print(data)
         student_image = data['SEND_IMAGE']
         # print(student_image)
         str_base64 = student_image.split(',')[-1]
@@ -531,8 +542,16 @@ def api_face_recognition():
                 # shapes = predictor(img, rect)  # get shape point ( 68 points dlib)
                 # nose_x, nose_y = shapes.part(33).x, shapes.part(33).y  # get point 33 x, y
                 name, probability, id_person = predict_guest(faceAligned)  # get prediction return label and probability
+
+                if id_person == 0:
+                    error_code = 404
+                    msg = 'Not in data'
+                else:
+                    error_code = 200
+                    msg = 'Successful'
+
                 person_name = name
-                person_id = id_person
+                person_id = int(id_person)
         #
         #         if id_person != 0:
         #             add_new_person_images(id_person, fa.align(img_copy, rect))
@@ -562,7 +581,6 @@ def api_face_recognition():
         # msg = 'successful !'
         # im_b64 = base64.b64encode(img)
 
-
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
@@ -570,11 +588,12 @@ def api_face_recognition():
         error_code = 400
         msg = 'Bad Request None STUDENT_ID_NUMBER ' + str(e)
         im_b64 = ''
-
-    return {"errorCode": error_code, "message": msg, "data": {
+    js_return = {"errorCode": error_code, "message": msg, "data": {
         'PERSON_ID': person_id,
         'PERSON_NAME': person_name,
     }}
+    print(js_return)
+    return js_return
 
 
 

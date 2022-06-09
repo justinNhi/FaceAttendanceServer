@@ -7,7 +7,8 @@ import requests as requests
 from PIL import Image
 from numpy import asarray
 from keras_vggface.utils import preprocess_input
-from database_model import *
+# from database_model import *
+from new_data_models import *
 import tensorflow as tf
 
 def predict_guest(model, image):

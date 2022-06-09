@@ -17,7 +17,7 @@ import base64
 from io import BytesIO
 
 # engine = create_engine("mssql+pyodbc://sa:123456@192.168.1.179:49999/face_attendance_8_11_2021?driver=SQL+Server")
-engine = create_engine("mssql+pyodbc://sa:Nhi874755@192.168.1.179/OFFICE_ATTENDANCE?driver=SQL+Server")
+engine = create_engine("mssql+pyodbc://sa:nhi874755@192.168.1.179/OFFICE_ATTENDANCE?driver=SQL+Server")
 
 Base = automap_base()
 
@@ -42,6 +42,13 @@ Person_Images_columns = Person_Images.__table__.columns.keys()
 
 Person_Attendance = Base.classes.PERSON_ATTENDANCE
 Person_Attendance_columns = Person_Attendance.__table__.columns.keys()
+
+
+# def return_date_today_attendance(date_today):
+#     session_sql = SessionSql()
+#     data_date_today = session_sql.query(Person_Attendance.TIME).filter(Person_Attendance.PERSON_ID == PERSON_ID,
+#                                                                     Person_Attendance.DATE == date,
+#                                                                     Person_Attendance.SESSION == 1).first()[0]
 
 
 def fill_example_data():
