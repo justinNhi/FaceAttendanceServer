@@ -8,45 +8,7 @@ from PIL import Image
 from numpy import asarray
 from keras_vggface.utils import preprocess_input
 # from database_model import *
-from new_data_models import *
 import tensorflow as tf
-
-def predict_guest(model, image):
-    imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image_arr = Image.fromarray(np.uint8(imageRGB))  # array to image
-    image_arr = image_arr.resize((224, 224))
-    face_array = asarray(image_arr)
-    # img_show = PIL.Image.fromarray(face_array)
-    # img_show.show()
-    faces = []
-    faces.append(face_array)
-    # image_arr = img_to_array(image_arr)
-    # image_np = np.expand_dims(image_arr, axis=0)
-    samples = asarray(faces, 'float32')
-    samples = preprocess_input(samples, version=2)
-    graph = tf.get_default_graph()
-    with graph.as_default():
-        emb = model.predict(samples)[0]
-    label = ''
-    probability = 0
-    embs = data_person_label_embedding()
-    for emb_person in embs:
-        id_person = emb_person['ID_PERSON']
-        id_number_person = emb_person['ID_NUMBER_PERSON']
-        person_emb = emb_person['PERSON_EMB']
-        score = cosine(emb, person_emb)
-        score = round(score, 2)
-        if score < 0.3:
-            ind = id_person
-            label = str(id_number_person)
-            probability = score
-            break
-        else:
-            ind = id_person
-            label = str("Unknow")
-            probability = score
-
-    return label, probability
 
 
 def get_predict(img, method, url, n= 0):
@@ -114,49 +76,49 @@ def check_rectangle(x, y, pt1, pt2):
         return False
 
 
-def gen_frames(camera, W, H, delta, mask_back, center_x, center_y, color, model, detector, fa, predictor):
-    while camera.isOpened():
-        r, img = camera.read()
-        img = cv2.resize(img, (W, H))
-        img = cv2.flip(img, 1)
-        # img_copy = img.copy()
-        # img_copy = img_copy[0:H, delta:W - delta]
-        # blur = cv2.GaussianBlur(img, (15, 15), 0)
-        # img[mask_back == 0] = blur[mask_back == 0]
-        # cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, color, thickness=1)
-        rects = detector(img)  # get face detection from Dlib
-        if len(rects) > 0:
-            for rect in rects:
-                faceAligned = fa.align(img, rect) # processing face aligned
-                shapes = predictor(img, rect) # get shape point ( 68 points dlib)
-                nose_x, nose_y = shapes.part(33).x, shapes.part(33).y  # get point 33 x, y
-                name, probability = predict_guest(model, faceAligned) # get prediction return label and probability
-                if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
-                    cv2.putText(img, str(name) + "-" + str(probability),
-                                (center_x - 0, center_y - 180),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 1, cv2.LINE_AA)
-
-        # if r["success"]:
-        #     # draw detect on image
-        #     for (i, result) in enumerate(r["predictions"]):
-        #         # cv2.rectangle(img, (result["left"], result["top"]), (result["right"], result["bottom"]),
-        #         #               (255, 0, 0), 2)
-        #         nose_x = result['nose_x']
-        #         nose_y = result['nose_y']
-        #         if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
-        #             cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
-        #             cv2.putText(img, str(result["name"]) + "-" + str(result["probability"]),
-        #                         (center_x - 0, center_y - 180),
-        #                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 1, cv2.LINE_AA)
-        # drawline(img, (center_x, center_y - 180), (center_x, center_y + 180), color)
-        # drawline(img, (center_x - 140, center_y), (center_x + 140, center_y), color)
-        # cv2.rectangle(img, (0, 0), (delta, H), color, -1)
-        # cv2.rectangle(img, (W-delta, 0), (W, H), color, -1)
-
-        ret, buffer = cv2.imencode('.jpg', img)
-        img = buffer.tobytes()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n')  # concat frame one by one and show result
+# def gen_frames(camera, W, H, delta, mask_back, center_x, center_y, color, model, detector, fa, predictor):
+#     while camera.isOpened():
+#         r, img = camera.read()
+#         img = cv2.resize(img, (W, H))
+#         img = cv2.flip(img, 1)
+#         # img_copy = img.copy()
+#         # img_copy = img_copy[0:H, delta:W - delta]
+#         # blur = cv2.GaussianBlur(img, (15, 15), 0)
+#         # img[mask_back == 0] = blur[mask_back == 0]
+#         # cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, color, thickness=1)
+#         rects = detector(img)  # get face detection from Dlib
+#         if len(rects) > 0:
+#             for rect in rects:
+#                 faceAligned = fa.align(img, rect) # processing face aligned
+#                 shapes = predictor(img, rect) # get shape point ( 68 points dlib)
+#                 nose_x, nose_y = shapes.part(33).x, shapes.part(33).y  # get point 33 x, y
+#                 name, probability = predict_guest(model, faceAligned) # get prediction return label and probability
+#                 if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
+#                     cv2.putText(img, str(name) + "-" + str(probability),
+#                                 (center_x - 0, center_y - 180),
+#                                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 1, cv2.LINE_AA)
+#
+#         # if r["success"]:
+#         #     # draw detect on image
+#         #     for (i, result) in enumerate(r["predictions"]):
+#         #         # cv2.rectangle(img, (result["left"], result["top"]), (result["right"], result["bottom"]),
+#         #         #               (255, 0, 0), 2)
+#         #         nose_x = result['nose_x']
+#         #         nose_y = result['nose_y']
+#         #         if check_rectangle(nose_x, nose_y, (center_x - 20, center_y - 20), (center_x + 20, center_y + 20)):
+#         #             cv2.ellipse(img, (center_x, center_y), (140, 180), 0, 0, 360, (0, 255, 0), thickness=2)
+#         #             cv2.putText(img, str(result["name"]) + "-" + str(result["probability"]),
+#         #                         (center_x - 0, center_y - 180),
+#         #                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 1, cv2.LINE_AA)
+#         # drawline(img, (center_x, center_y - 180), (center_x, center_y + 180), color)
+#         # drawline(img, (center_x - 140, center_y), (center_x + 140, center_y), color)
+#         # cv2.rectangle(img, (0, 0), (delta, H), color, -1)
+#         # cv2.rectangle(img, (W-delta, 0), (W, H), color, -1)
+#
+#         ret, buffer = cv2.imencode('.jpg', img)
+#         img = buffer.tobytes()
+#         yield (b'--frame\r\n'
+#                b'Content-Type: image/jpeg\r\n\r\n' + img + b'\r\n')  # concat frame one by one and show result
 
 def gen_frames_register(camera, W, H, delta, mask_back, center_x, center_y, color, url):
     while camera.isOpened():
