@@ -503,13 +503,14 @@ def max_person_id():
 def get_person():
     session_sql = SessionSql()
     array_return = []
-    rs = session_sql.query(Person).filter(Person.USED_STATUS == 1).order_by(desc(Person.PERSON_ID_NUMBER)).all()
+    rs = session_sql.query(Person).filter(Person.USED_STATUS != 0).order_by(desc(Person.PERSON_ID_NUMBER)).all()
     try:
         if len(rs) > 0:
             for row in rs:
                 json_return = {}
                 # for col in Person_columns:
                 #     json_return[col] = getattr(row, col)
+                json_return['PERSON_ID'] = str(getattr(row, 'PERSON_ID'))
                 json_return['PERSON_ID_NUMBER'] = str(getattr(row, 'PERSON_ID_NUMBER'))
                 json_return['FULL_NAME'] = get_full_name(
                     getattr(row, "PERSON_LAST_NAME"),
@@ -525,7 +526,7 @@ def get_person():
         print(e, exc_type, fname, exc_tb.tb_lineno)
 
     session_sql.close()
-    return {'list_of_users': array_return}
+    return array_return
 
 
 def insert_person(person_id_number, last, middle, first, image_base64, emb_base64):
@@ -971,22 +972,27 @@ def data_attendances_date_month_year(month, year):
             )
             person_date_data = []
             count_session = 0
+            json_person = {}
             for _date in (start_date + timedelta(n) for n in range((end_date - start_date).days)):
 
                 json_person = {}
                 json_person["date"] = _date.strftime('%Y-%m-%d')
 
                 for session_id in [1,2]:
-                    rs_person_check_in = session_sql.query(Person_Check_In).filter(
-                        Person_Check_In.PERSON_ID == row_person.PERSON_ID,
-                        Person_Check_In.SESSION_ID == session_id,
-                        Person_Check_In.DATE == _date).first()
+                    rs_person_check_in = session_sql.query(Person_Check).filter(
+                        Person_Check.PERSON_ID == row_person.PERSON_ID,
+                        Person_Check.SESSION_ID == session_id,
+                        Person_Check.SESSION_CHECK_ID == 1,
 
-                    rs_person_check_out = session_sql.query(Person_Check_Out).filter(
-                        Person_Check_Out.PERSON_ID == row_person.PERSON_ID,
-                        Person_Check_Out.SESSION_ID == session_id,
-                        Person_Check_Out.DATE == _date).first()
-                    print(_date, session_id, rs_person_check_in, rs_person_check_out)
+                        Person_Check.DATE == _date).first()
+
+                    rs_person_check_out = session_sql.query(Person_Check).filter(
+                        Person_Check.PERSON_ID == row_person.PERSON_ID,
+                        Person_Check.SESSION_ID == session_id,
+                        Person_Check.SESSION_CHECK_ID == 2,
+
+                        Person_Check.DATE == _date).first()
+                    # print(_date, session_id, rs_person_check_in, rs_person_check_out)
                     if session_id == 1:
                         if rs_person_check_in is not None:
                             json_person['sa_status'] = True
@@ -1021,8 +1027,134 @@ def data_attendances_date_month_year(month, year):
                             count_session += 1
 
                 person_date_data.append(json_person)
+
+
             json1_person['attendances'] = person_date_data
             json1_person['count_attendances'] = count_session
+
+            data.append(json1_person)
+        sample_data['data'] = data
+    session_sql.close()
+    return sample_data
+
+
+def data_attendances_date_month_year_by_month(month, year):
+    session_sql = SessionSql()
+
+    if int(month) >= 2 and int(month) <= 12:
+        if len(str(int(month) - 1)) < 2:
+            month_1 = '0' + str(int(month) - 1)
+        else:
+            month_1 = str(int(month) - 1)
+        month_2 = str(int(month))
+        year_1 = year
+        year_2 = year
+    else:
+        month_1 = '12'
+        month_2 = '01'
+        year_1 = year - 1
+        year_2 = year
+
+    start_date = datetime.strptime('26/' + month_1 + '/' + str(year_1), '%d/%m/%Y')
+    end_date = datetime.strptime('26/' + month_2 + '/' + str(year_2), '%d/%m/%Y')
+
+    rs_persons = session_sql.query(Person).filter(Person.USED_STATUS == 1).all()
+    sample_data = {
+        "month": month,  # filter month
+        "year": year,  # filter year
+        "current_year": datetime.now().year,  # current system year
+        "start_date": start_date.strftime('%Y-%m-%d'),
+        "end_date": end_date.strftime('%Y-%m-%d'),
+    }
+    if len(rs_persons) > 0:
+        data = []
+        for row_person in rs_persons:
+            json1_person = {}
+            json1_person['id_person'] = str(getattr(row_person, "PERSON_ID"))
+            json1_person['msnv'] = getattr(row_person, "PERSON_ID_NUMBER")
+            json1_person['name'] = get_full_name(
+                getattr(row_person, 'PERSON_LAST_NAME'),
+                getattr(row_person, 'PERSON_MIDDLE_NAME'),
+                getattr(row_person, 'PERSON_FIRST_NAME')
+            )
+            person_date_data = []
+            count_session = 0
+            json_person = {}
+
+            rs_person_check = session_sql.query(Person_Check).filter(
+                Person_Check.PERSON_ID == str(getattr(row_person, "PERSON_ID")),
+                Person_Check.MAIN_MONTH == month,
+                Person_Check.MAIN_YEAR == year,
+                Person_Check.USED_STATUS != 0
+            ).all()
+            array_person_check_all = []
+            if len(rs_person_check) > 0:
+                for row_rs_person_chek  in rs_person_check:
+                    json_row_person_check = {}
+                    for col in Person_Check_columns:
+                        json_row_person_check[col] = getattr(row_rs_person_chek, col)
+                        array_person_check_all.append(json_row_person_check)
+
+
+            for row in array_person_check_all:
+                print(row)
+            break
+            # json_person = {}
+            # json_person["date"] = _date.strftime('%Y-%m-%d')
+            #
+            # for session_id in [1,2]:
+            #     rs_person_check_in = session_sql.query(Person_Check).filter(
+            #         Person_Check.PERSON_ID == row_person.PERSON_ID,
+            #         Person_Check.SESSION_ID == session_id,
+            #         Person_Check.SESSION_CHECK_ID == 1,
+            #
+            #         Person_Check.DATE == _date).first()
+            #
+            #     rs_person_check_out = session_sql.query(Person_Check).filter(
+            #         Person_Check.PERSON_ID == row_person.PERSON_ID,
+            #         Person_Check.SESSION_ID == session_id,
+            #         Person_Check.SESSION_CHECK_ID == 2,
+            #
+            #         Person_Check.DATE == _date).first()
+            #     # print(_date, session_id, rs_person_check_in, rs_person_check_out)
+            #     if session_id == 1:
+            #         if rs_person_check_in is not None:
+            #             json_person['sa_status'] = True
+            #             json_person['sa_checkin'] = rs_person_check_in.TIME.strftime('%H:%M:%S')
+            #         else:
+            #             json_person['sa_status'] = False
+            #             json_person['sa_checkin'] = '0:00:00'
+            #
+            #         if rs_person_check_out is not None:
+            #             json_person['sa_checkout'] = rs_person_check_out.TIME.strftime('%H:%M:%S')
+            #         else:
+            #             json_person['sa_status'] = False
+            #             json_person['sa_checkout'] = '0:00:00'
+            #
+            #         if json_person['sa_status'] == True:
+            #             count_session += 1
+            #     else:
+            #         if rs_person_check_in is not None:
+            #             json_person['ch_status'] = True
+            #             json_person['ch_checkin'] = rs_person_check_in.TIME.strftime('%H:%M:%S')
+            #         else:
+            #             json_person['ch_status'] = False
+            #             json_person['ch_checkin'] = '0:00:00'
+            #
+            #         if rs_person_check_out is not None:
+            #             json_person['ch_checkout'] = rs_person_check_out.TIME.strftime('%H:%M:%S')
+            #         else:
+            #             json_person['ch_status'] = False
+            #             json_person['ch_checkout'] = '0:00:00'
+            #
+            #         if json_person['ch_status'] == True:
+            #             count_session += 1
+            #
+            # person_date_data.append(json_person)
+            #
+            #
+            # json1_person['attendances'] = person_date_data
+            # json1_person['count_attendances'] = count_session
 
             data.append(json1_person)
         sample_data['data'] = data
@@ -1263,8 +1395,6 @@ def test_insert_check_in_check_out(month, year):
     return 1
 
 
-
-
 def data_personal_profile(person_id, month, year):
     session_sql = SessionSql()
 
@@ -1346,7 +1476,17 @@ def data_personal_profile(person_id, month, year):
     return json_profile
 
 
+def auto_create_account():
+    session_sql = SessionSql()
+
+    session_sql.close()
+
+    return 1
+
+
 # if __name__ == "__main__":
+#     data_attendances_date_month_year_by_month("5", "2022")
+
     # for m in [1,2,3,4,5,6,7,8,9,10,11,12]:
     #     test_insert_check_in_check_out(m, 2021)
     # data = datetime.today()
