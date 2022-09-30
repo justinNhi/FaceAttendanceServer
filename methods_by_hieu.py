@@ -10,6 +10,9 @@ Cac phuong thuc co trong file nay:
 """
 
 import datetime
+import os
+import sys
+
 from new_data_models import Person, Person_Check, SessionSql, get_full_name
 
 
@@ -18,9 +21,9 @@ def get_personal_profile_data():
     rs_personal = session_sql.query(Person).filter(
         Person.USED_STATUS != 0).all()
     data = {}
-    for row in rs_personal:
-        json_profile = {}
-        if row is not None:
+    if len(rs_personal) > 0:
+        for row in rs_personal:
+            json_profile = {}
             json_profile['full_name'] = get_full_name(
                 getattr(row, 'PERSON_LAST_NAME'),
                 getattr(row, 'PERSON_MIDDLE_NAME'),
@@ -58,12 +61,14 @@ def get_personal_profile_data():
                 row, 'USED_STATUS_NAME')
             json_profile['USED_STATUS_NAME'] = getattr(
                 row, 'USED_STATUS_NAME')
+
             data.update({json_profile['PERSON_ID']: json_profile})
     session_sql.close()
     return data
 
 
-def data_history(*args):
+def get_data_history(*args):
+    data_personal_profile = get_personal_profile_data()
     """
     1 tham so se tu check date hoac main_year
     2 tham so theo thu tu main_year -> main_month
@@ -71,28 +76,34 @@ def data_history(*args):
     session_sql = SessionSql()
     data_json = []
     if len(args) == 1:
-        check = args[0]
-        if type(check) != datetime.datetime:
+        check_input_date = args[0]
+        print('check_input_date', check_input_date)
+        if type(check_input_date) != datetime.datetime:
             try:
-                date = datetime.datetime.strptime(check, "%Y-%m-%d")
-                month = date.month
-                year = date.year
+                date = datetime.datetime.strptime(check_input_date, "%Y-%m-%d")
+                # month = date.month
+                # year = date.year
                 rs_check = session_sql.query(Person_Check).filter(
                     Person_Check.DATE == date,
                     Person_Check.USED_STATUS != 0).all()
-            except:
+            except Exception as e:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                print(e, exc_type, fname, exc_tb.tb_lineno)
+                year = check_input_date # convert to datetime fail will enter to year
                 rs_check = session_sql.query(Person_Check).filter(
-                    Person_Check.MAIN_YEAR == check,
+                    Person_Check.MAIN_YEAR == year,
                     Person_Check.USED_STATUS != 0).all()
         else:
-            year = check.year
-            month = check.month
+            # year = check.year
+            # month = check.month
+            date = check_input_date # is datetime format
             rs_check = session_sql.query(Person_Check).filter(
                 Person_Check.DATE == date,
                 Person_Check.USED_STATUS != 0).all()
     else:
-        year = args[0]
-        month = args[1]
+        year = args[1]
+        month = args[0]
         rs_check = session_sql.query(Person_Check).filter(
             Person_Check.MAIN_MONTH == month,
             Person_Check.MAIN_YEAR == year,
@@ -100,7 +111,6 @@ def data_history(*args):
     if len(rs_check) > 0:
         for row in rs_check:
             json_check = {}
-            array_check = []
             json_check['DATETIME'] = getattr(row, 'DATETIME')
             json_check['SESSION_CHECK_ID'] = getattr(
                 row, 'SESSION_CHECK_ID')
@@ -121,15 +131,15 @@ def data_history(*args):
                 row, 'SESSION_STATUS_NAME_EN')
             json_check['SESSION_IMAGE_BASE64'] = getattr(
                 row, 'SESSION_IMAGE_BASE64').decode('utf-8')
-            array_check.append(json_check)
             person_id = getattr(row, 'PERSON_ID')
             json_profile = data_personal_profile[person_id]
-            json_profile['timeline'] = array_check
-            data_json.append(json_profile)
+            json_check['profile'] = json_profile
+            data_json.append(json_check)
+
     session_sql.close()
     return data_json
 
 
-if __name__ == "__main__":
-    data_personal_profile = get_personal_profile_data()
-    data_history = data_history("2022", "6")
+# if __name__ == "__main__":
+#     data_personal_profile = get_personal_profile_data()
+#     data_history = data_history("2022", "6")

@@ -45,20 +45,20 @@ Person_Images_columns = Person_Images.__table__.columns.keys()
 # Person_Attendance = Base.classes.PERSON_ATTENDANCE
 # Person_Attendance_columns = Person_Attendance.__table__.columns.keys()
 
-Person_Session_1 = Base.classes.PERSON_SESSION_1
-Person_Session_1_columns = Person_Session_1.__table__.columns.keys()
+# Person_Session_1 = Base.classes.PERSON_SESSION_1
+# Person_Session_1_columns = Person_Session_1.__table__.columns.keys()
+#
+# Person_Session_2 = Base.classes.PERSON_SESSION_2
+# Person_Session_2_columns = Person_Session_2.__table__.columns.keys()
+#
+# Person_Session_3 = Base.classes.PERSON_SESSION_3
+# Person_Session_3_columns = Person_Session_3.__table__.columns.keys()
 
-Person_Session_2 = Base.classes.PERSON_SESSION_2
-Person_Session_2_columns = Person_Session_2.__table__.columns.keys()
-
-Person_Session_3 = Base.classes.PERSON_SESSION_3
-Person_Session_3_columns = Person_Session_3.__table__.columns.keys()
-
-Person_Check_In = Base.classes.PERSON_CHECK_IN
-Person_Check_In_columns = Person_Check_In.__table__.columns.keys()
-
-Person_Check_Out = Base.classes.PERSON_CHECK_OUT
-Person_Check_Out_columns = Person_Check_Out.__table__.columns.keys()
+# Person_Check_In = Base.classes.PERSON_CHECK_IN
+# Person_Check_In_columns = Person_Check_In.__table__.columns.keys()
+#
+# Person_Check_Out = Base.classes.PERSON_CHECK_OUT
+# Person_Check_Out_columns = Person_Check_Out.__table__.columns.keys()
 
 Person_Check = Base.classes.PERSON_CHECK
 Person_Check_columns = Person_Check.__table__.columns.keys()
@@ -81,358 +81,358 @@ from datetime import date, timedelta, datetime
 # detector = dlib.get_frontal_face_detector()
 # fa = FaceAligner(desiredFaceWidth=150, desiredLeftEye=(0.28, 0.28))
 
-def get_check_in(date_insert):
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        rs = session_sql.query(Person, Person_Check_In).filter(
-            Person_Check_In.PERSON_ID == Person.PERSON_ID,
-            Person.USED_STATUS == 1,
-            Person_Check_In.DATE == date_insert
-        ).order_by(desc(Person_Check_In.TIME))
-        print(rs)
-        rs = rs.all()
-        if len(rs) > 0:
-            for person, person_check_in in rs:
-                json_return = {}
-                json_return['PERSON_ID_NUMBER'] = getattr(person, 'PERSON_ID_NUMBER')
-                json_return['PERSON_FULL_NAME'] = get_full_name(
-                    getattr(person, 'PERSON_LAST_NAME'),
-                    getattr(person, 'PERSON_MIDDLE_NAME'),
-                    getattr(person, 'PERSON_FIRST_NAME')
-                )
-                json_return['TIME'] = getattr(person_check_in, 'TIME').strftime("%H:%M:%S")
-                json_return['SESSION_NAME'] = getattr(person_check_in, 'SESSION_NAME')
-                json_return['SESSION_NAME_EN'] = getattr(person_check_in, 'SESSION_NAME_EN')
-                json_return['SESSION_STATUS_NAME'] = getattr(person_check_in, 'SESSION_STATUS_NAME')
-                json_return['SESSION_STATUS_NAME_EN'] = getattr(person_check_in, 'SESSION_STATUS_NAME_EN')
-                json_return['SESSION_IMAGE_BASE64'] = getattr(person_check_in, 'SESSION_IMAGE_BASE64').decode("utf-8")
-
-                array_return.append(json_return)
-
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-
-    session_sql.close()
-
-    return array_return
-
-
-def get_check_out(date_insert):
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        rs = session_sql.query(Person, Person_Check_Out).filter(
-            Person_Check_Out.PERSON_ID == Person.PERSON_ID,
-            Person.USED_STATUS == 1,
-            Person_Check_Out.DATE == date_insert
-        ).order_by(desc(Person_Check_Out.TIME)).all()
-        if len(rs) > 0:
-            for person, person_check_out in rs:
-                json_return = {}
-                json_return['PERSON_ID_NUMBER'] = getattr(person, 'PERSON_ID_NUMBER')
-                json_return['PERSON_FULL_NAME'] = get_full_name(
-                    getattr(person, 'PERSON_LAST_NAME'),
-                    getattr(person, 'PERSON_MIDDLE_NAME'),
-                    getattr(person, 'PERSON_FIRST_NAME')
-                )
-                json_return['TIME'] = getattr(person_check_out, 'TIME').strftime("%H:%M:%S")
-                json_return['SESSION_NAME'] = getattr(person_check_out, 'SESSION_NAME')
-                json_return['SESSION_NAME_EN'] = getattr(person_check_out, 'SESSION_NAME_EN')
-                json_return['SESSION_STATUS_NAME'] = getattr(person_check_out, 'SESSION_STATUS_NAME')
-                json_return['SESSION_STATUS_NAME_EN'] = getattr(person_check_out, 'SESSION_STATUS_NAME_EN')
-                json_return['SESSION_IMAGE_BASE64'] = getattr(person_check_out, 'SESSION_IMAGE_BASE64').decode("utf-8")
-
-                array_return.append(json_return)
-
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-
-    session_sql.close()
-
-    return array_return
-
-
-def insert_check_in(person_id, image_base64):
-    error_code = 400
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        morning_time = datetime.now().replace(hour=6, minute=0, second=0).strftime("%H:%M:%S")
-        afternoon_time = datetime.now().replace(hour=11, minute=0, second=0).strftime("%H:%M:%S")
-        evening_time = datetime.now().replace(hour=17, minute=0, second=0).strftime("%H:%M:%S")
-        time_now = datetime.now().strftime("%H:%M:%S")
-        if time_now >= morning_time and time_now <= afternoon_time:
-            session_id = 1
-            session_name = 'Buổi Sáng'
-            session_name_en = "Morning Shift"
-        elif time_now > afternoon_time and time_now <= evening_time:
-            session_id = 2
-            session_name = 'Buổi Chiều'
-            session_name_en = "Afternoon Shift"
-        # elif time_now > evening_time:
-        else:
-            session_id = 3
-            session_name = 'Buổi Tối'
-            session_name_en = "Evening Shift"
-        # date_insert = datetime.today().strftime('%d/%m/%Y')
-        time_insert = datetime.now().strftime("%H:%M:%S")
-        date_insert = date.today().strftime('%Y-%m-%d')
-        # time_insert = datetime.now()
-
-        rs_check = session_sql.query(Person_Check_In).filter(
-            Person_Check_In.PERSON_ID == person_id,
-            Person_Check_In.DATE == date_insert,
-            Person_Check_In.SESSION_ID == session_id).all()
-        if len(rs_check) == 0:
-            if person_id is not None and int(person_id) > 0:
-                try:
-                    json_insert = {
-                        "PERSON_ID": person_id,
-                        "DATE": date_insert,
-                        "TIME": time_insert,
-                        "SESSION_ID": session_id,
-                        "SESSION_NAME": session_name,
-                        "SESSION_NAME_EN": session_name_en,
-                        "SESSION_STATUS_NAME": 'Đã điểm danh',
-                        "SESSION_STATUS_NAME_EN": 'Attend',
-                        "SESSION_IMAGE_BASE64": image_base64,
-                        "USED_STATUS": 1,
-                        "USED_STATUS_NAME": "In Use",
-                    }
-                    session_sql.add(Person_Check_In(**json_insert))
-                    session_sql.commit()
-                    error_code = 200
-                    array_return = get_check_in(date_insert)
-                except:
-                    error_code = 201
-                print('Kiem tra try ex', error_code, array_return)
-
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-
-    session_sql.close()
-
-    return error_code, array_return
-
-
-def insert_check_out(person_id, image_base64):
-    error_code = 400
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        morning_time = datetime.now().replace(hour=7, minute=0, second=0).strftime("%H:%M:%S")
-        afternoon_time = datetime.now().replace(hour=13, minute=0, second=0).strftime("%H:%M:%S")
-        evening_time = datetime.now().replace(hour=18, minute=0, second=0).strftime("%H:%M:%S")
-        time_now = datetime.now().strftime("%H:%M:%S")
-        date_insert = datetime.today().strftime('%Y-%m-%d')
-        # time_now = datetime.now()
-        # date_insert = date.today()
-
-        if time_now >= morning_time and time_now <= afternoon_time:
-            session_id = 1
-            session_name = 'Buổi Sáng'
-            session_name_en = "Morning Shift"
-        elif time_now > afternoon_time and time_now <= evening_time:
-            session_id = 2
-            session_name = 'Buổi Chiều'
-            session_name_en = "Afternoon Shift"
-        # elif time_now > evening_time:
-        else:
-            session_id = 3
-            session_name = 'Buổi Tối'
-            session_name_en = "Evening Shift"
-
-        rs_check = session_sql.query(Person_Check_Out).filter(
-            Person_Check_Out.PERSON_ID == person_id,
-            Person_Check_Out.DATE == date_insert,
-            Person_Check_Out.SESSION_ID == session_id).all()
-        if len(rs_check) == 0:
-            if person_id is not None and int(person_id) > 0:
-                try:
-                    json_insert = {
-                        "PERSON_ID": person_id,
-                        "DATE": date_insert,
-                        "TIME": datetime.now().strftime("%H:%M:%S"),
-                        "SESSION_ID": session_id,
-                        "SESSION_NAME": session_name,
-                        "SESSION_NAME_EN": session_name_en,
-                        "SESSION_STATUS_NAME": 'Đã hoàn thành buổi làm',
-                        "SESSION_STATUS_NAME_EN": 'Done a Shift',
-                        "SESSION_IMAGE_BASE64": image_base64,
-                        "USED_STATUS": 1,
-                        "USED_STATUS_NAME": "In Use",
-                    }
-                    session_sql.add(Person_Check_Out(**json_insert))
-                    error_code = 200
-                    session_sql.commit()
-                    array_return = get_check_out(date_insert)
-                except:
-                    error_code = 201
-
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-
-    session_sql.close()
-    return error_code, array_return
-
-
-def get_json_person_check_in(person_id, date, session_process=1):
-    # 1 check in morning
-    # 2 check in afternoon
-    # 3 check in evening
-    session_sql = SessionSql()
-    json_return = {}
-    try:
-        if person_id is not None and date is not None:
-            date = datetime.datetime.strptime(date, '%d/%m/%Y')
-            if int(session_process) == 1:
-                results_of_check = session_sql.query(Person_Check_In).filter(
-                    Person_Check_In.PERSON_ID == person_id,
-                    Person_Check_In.DATE == date,
-                    Person_Check_In.USED_STATUS == 1
-                ).all()
-                if results_of_check is not None and len(results_of_check) > 0:
-                    json_return['SESSION_NAME'] = getattr(results_of_check, 'SESSION_NAME')
-                    json_return['SESSION_NAME_EN'] = getattr(results_of_check, 'SESSION_NAME_EN')
-                    json_return['SESSION_STATUS_NAME'] = getattr(results_of_check, 'SESSION_STATUS_NAME')
-                    json_return['SESSION_STATUS_NAME_EN'] = getattr(results_of_check, 'SESSION_STATUS_NAME_EN')
-                    json_return['SESSION_IMAGE_BASE64'] = getattr(results_of_check, 'SESSION_IMAGE_BASE64')
-                    json_return['USED_STATUS_NAME'] = getattr(results_of_check, 'USED_STATUS_NAME')
-                else:
-                    pass
-        else:
-            pass
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-    session_sql.close()
-    return json_return
-
-
-def get_json_person_check_out(person_id, date, session_process=1):
-    # 1 check in morning
-    # 2 check in afternoon
-    # 3 check in evening
-    session_sql = SessionSql()
-    json_return = {}
-    try:
-        if person_id is not None and date is not None:
-            date = datetime.datetime.strptime(date, '%d/%m/%Y')
-            if int(session_process) == 1:
-                results_of_check = session_sql.query(Person_Check_Out).filter(
-                    Person_Check_Out.PERSON_ID == person_id,
-                    Person_Check_Out.DATE == date,
-                    Person_Check_Out.USED_STATUS == 1
-                ).all()
-                if results_of_check is not None and len(results_of_check) > 0:
-                    json_return['SESSION_NAME'] = getattr(results_of_check, 'SESSION_NAME')
-                    json_return['SESSION_NAME_EN'] = getattr(results_of_check, 'SESSION_NAME_EN')
-                    json_return['SESSION_STATUS_NAME'] = getattr(results_of_check, 'SESSION_STATUS_NAME')
-                    json_return['SESSION_STATUS_NAME_EN'] = getattr(results_of_check, 'SESSION_STATUS_NAME_EN')
-                    json_return['SESSION_IMAGE_BASE64'] = getattr(results_of_check, 'SESSION_IMAGE_BASE64')
-                    json_return['USED_STATUS_NAME'] = getattr(results_of_check, 'USED_STATUS_NAME')
-                else:
-                    pass
-        else:
-            pass
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-    session_sql.close()
-    return json_return
-
-
-def get_json_all_check_in():
-    # 1 check in morning
-    # 2 check in afternoon
-    # 3 check in evening
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        date = datetime.datetime.today().strftime('%Y-%d-%m')
-        results_of_check = session_sql.query(Person_Check_In).filter(
-            # Person_Check_In.PERSON_ID == person_id,
-            Person_Check_In.DATE == date,
-            Person_Check_In.USED_STATUS == 1
-        ).all()
-        if results_of_check is not None and len(results_of_check) > 0:
-            for row in results_of_check:
-                json_return = {}
-
-                rs_person = session_sql.query(Person).filter(Person.PERSON_ID == getattr(row, 'PERSON_ID')).first()
-                json_return['PERSON_ID'] = int(getattr(rs_person, 'PERSON_ID'))
-                json_return['PERSON_ID_NUMBER'] = getattr(rs_person, 'PERSON_ID_NUMBER')
-                json_return['PERSON_FULL_NAME'] = get_full_name(
-                    getattr(rs_person, 'PERSON_LAST_NAME'),
-                    getattr(rs_person, 'PERSON_MIDDLE_NAME'),
-                    getattr(rs_person, 'PERSON_FIRST_NAME')
-                )
-                json_return['TIME'] = getattr(row, 'TIME').strftime("%H:%M:%S")
-                json_return['SESSION_NAME'] = getattr(row, 'SESSION_NAME')
-                json_return['SESSION_NAME_EN'] = getattr(row, 'SESSION_NAME_EN')
-                json_return['SESSION_STATUS_NAME'] = getattr(row, 'SESSION_STATUS_NAME')
-                json_return['SESSION_STATUS_NAME_EN'] = getattr(row, 'SESSION_STATUS_NAME_EN')
-                json_return['SESSION_IMAGE_BASE64'] = getattr(row, 'SESSION_IMAGE_BASE64').decode("utf-8")
-                json_return['USED_STATUS_NAME'] = getattr(row, 'USED_STATUS_NAME')
-                array_return.append(json_return)
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-    session_sql.close()
-    return array_return
+# def get_check_in(date_insert):
+# #     session_sql = SessionSql()
+# #     array_return = []
+# #     try:
+# #         rs = session_sql.query(Person, Person_Check_In).filter(
+# #             Person_Check_In.PERSON_ID == Person.PERSON_ID,
+# #             Person.USED_STATUS == 1,
+# #             Person_Check_In.DATE == date_insert
+# #         ).order_by(desc(Person_Check_In.TIME))
+# #         print(rs)
+# #         rs = rs.all()
+# #         if len(rs) > 0:
+# #             for person, person_check_in in rs:
+# #                 json_return = {}
+# #                 json_return['PERSON_ID_NUMBER'] = getattr(person, 'PERSON_ID_NUMBER')
+# #                 json_return['PERSON_FULL_NAME'] = get_full_name(
+# #                     getattr(person, 'PERSON_LAST_NAME'),
+# #                     getattr(person, 'PERSON_MIDDLE_NAME'),
+# #                     getattr(person, 'PERSON_FIRST_NAME')
+# #                 )
+# #                 json_return['TIME'] = getattr(person_check_in, 'TIME').strftime("%H:%M:%S")
+# #                 json_return['SESSION_NAME'] = getattr(person_check_in, 'SESSION_NAME')
+# #                 json_return['SESSION_NAME_EN'] = getattr(person_check_in, 'SESSION_NAME_EN')
+# #                 json_return['SESSION_STATUS_NAME'] = getattr(person_check_in, 'SESSION_STATUS_NAME')
+# #                 json_return['SESSION_STATUS_NAME_EN'] = getattr(person_check_in, 'SESSION_STATUS_NAME_EN')
+# #                 json_return['SESSION_IMAGE_BASE64'] = getattr(person_check_in, 'SESSION_IMAGE_BASE64').decode("utf-8")
+# #
+# #                 array_return.append(json_return)
+# #
+# #     except Exception as e:
+# #         exc_type, exc_obj, exc_tb = sys.exc_info()
+# #         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+# #         print(e, exc_type, fname, exc_tb.tb_lineno)
+# #
+# #     session_sql.close()
+# #
+# #     return array_return
+#
+#
+# def get_check_out(date_insert):
+#     session_sql = SessionSql()
+#     array_return = []
+#     try:
+#         rs = session_sql.query(Person, Person_Check_Out).filter(
+#             Person_Check_Out.PERSON_ID == Person.PERSON_ID,
+#             Person.USED_STATUS == 1,
+#             Person_Check_Out.DATE == date_insert
+#         ).order_by(desc(Person_Check_Out.TIME)).all()
+#         if len(rs) > 0:
+#             for person, person_check_out in rs:
+#                 json_return = {}
+#                 json_return['PERSON_ID_NUMBER'] = getattr(person, 'PERSON_ID_NUMBER')
+#                 json_return['PERSON_FULL_NAME'] = get_full_name(
+#                     getattr(person, 'PERSON_LAST_NAME'),
+#                     getattr(person, 'PERSON_MIDDLE_NAME'),
+#                     getattr(person, 'PERSON_FIRST_NAME')
+#                 )
+#                 json_return['TIME'] = getattr(person_check_out, 'TIME').strftime("%H:%M:%S")
+#                 json_return['SESSION_NAME'] = getattr(person_check_out, 'SESSION_NAME')
+#                 json_return['SESSION_NAME_EN'] = getattr(person_check_out, 'SESSION_NAME_EN')
+#                 json_return['SESSION_STATUS_NAME'] = getattr(person_check_out, 'SESSION_STATUS_NAME')
+#                 json_return['SESSION_STATUS_NAME_EN'] = getattr(person_check_out, 'SESSION_STATUS_NAME_EN')
+#                 json_return['SESSION_IMAGE_BASE64'] = getattr(person_check_out, 'SESSION_IMAGE_BASE64').decode("utf-8")
+#
+#                 array_return.append(json_return)
+#
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#
+#     session_sql.close()
+#
+#     return array_return
+#
+#
+# def insert_check_in(person_id, image_base64):
+#     error_code = 400
+#     session_sql = SessionSql()
+#     array_return = []
+#     try:
+#         morning_time = datetime.now().replace(hour=6, minute=0, second=0).strftime("%H:%M:%S")
+#         afternoon_time = datetime.now().replace(hour=11, minute=0, second=0).strftime("%H:%M:%S")
+#         evening_time = datetime.now().replace(hour=17, minute=0, second=0).strftime("%H:%M:%S")
+#         time_now = datetime.now().strftime("%H:%M:%S")
+#         if time_now >= morning_time and time_now <= afternoon_time:
+#             session_id = 1
+#             session_name = 'Buổi Sáng'
+#             session_name_en = "Morning Shift"
+#         elif time_now > afternoon_time and time_now <= evening_time:
+#             session_id = 2
+#             session_name = 'Buổi Chiều'
+#             session_name_en = "Afternoon Shift"
+#         # elif time_now > evening_time:
+#         else:
+#             session_id = 3
+#             session_name = 'Buổi Tối'
+#             session_name_en = "Evening Shift"
+#         # date_insert = datetime.today().strftime('%d/%m/%Y')
+#         time_insert = datetime.now().strftime("%H:%M:%S")
+#         date_insert = date.today().strftime('%Y-%m-%d')
+#         # time_insert = datetime.now()
+#
+#         rs_check = session_sql.query(Person_Check_In).filter(
+#             Person_Check_In.PERSON_ID == person_id,
+#             Person_Check_In.DATE == date_insert,
+#             Person_Check_In.SESSION_ID == session_id).all()
+#         if len(rs_check) == 0:
+#             if person_id is not None and int(person_id) > 0:
+#                 try:
+#                     json_insert = {
+#                         "PERSON_ID": person_id,
+#                         "DATE": date_insert,
+#                         "TIME": time_insert,
+#                         "SESSION_ID": session_id,
+#                         "SESSION_NAME": session_name,
+#                         "SESSION_NAME_EN": session_name_en,
+#                         "SESSION_STATUS_NAME": 'Đã điểm danh',
+#                         "SESSION_STATUS_NAME_EN": 'Attend',
+#                         "SESSION_IMAGE_BASE64": image_base64,
+#                         "USED_STATUS": 1,
+#                         "USED_STATUS_NAME": "In Use",
+#                     }
+#                     session_sql.add(Person_Check_In(**json_insert))
+#                     session_sql.commit()
+#                     error_code = 200
+#                     array_return = get_check_in(date_insert)
+#                 except:
+#                     error_code = 201
+#                 print('Kiem tra try ex', error_code, array_return)
+#
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#
+#     session_sql.close()
+#
+#     return error_code, array_return
+#
+#
+# def insert_check_out(person_id, image_base64):
+#     error_code = 400
+#     session_sql = SessionSql()
+#     array_return = []
+#     try:
+#         morning_time = datetime.now().replace(hour=7, minute=0, second=0).strftime("%H:%M:%S")
+#         afternoon_time = datetime.now().replace(hour=13, minute=0, second=0).strftime("%H:%M:%S")
+#         evening_time = datetime.now().replace(hour=18, minute=0, second=0).strftime("%H:%M:%S")
+#         time_now = datetime.now().strftime("%H:%M:%S")
+#         date_insert = datetime.today().strftime('%Y-%m-%d')
+#         # time_now = datetime.now()
+#         # date_insert = date.today()
+#
+#         if time_now >= morning_time and time_now <= afternoon_time:
+#             session_id = 1
+#             session_name = 'Buổi Sáng'
+#             session_name_en = "Morning Shift"
+#         elif time_now > afternoon_time and time_now <= evening_time:
+#             session_id = 2
+#             session_name = 'Buổi Chiều'
+#             session_name_en = "Afternoon Shift"
+#         # elif time_now > evening_time:
+#         else:
+#             session_id = 3
+#             session_name = 'Buổi Tối'
+#             session_name_en = "Evening Shift"
+#
+#         rs_check = session_sql.query(Person_Check_Out).filter(
+#             Person_Check_Out.PERSON_ID == person_id,
+#             Person_Check_Out.DATE == date_insert,
+#             Person_Check_Out.SESSION_ID == session_id).all()
+#         if len(rs_check) == 0:
+#             if person_id is not None and int(person_id) > 0:
+#                 try:
+#                     json_insert = {
+#                         "PERSON_ID": person_id,
+#                         "DATE": date_insert,
+#                         "TIME": datetime.now().strftime("%H:%M:%S"),
+#                         "SESSION_ID": session_id,
+#                         "SESSION_NAME": session_name,
+#                         "SESSION_NAME_EN": session_name_en,
+#                         "SESSION_STATUS_NAME": 'Đã hoàn thành buổi làm',
+#                         "SESSION_STATUS_NAME_EN": 'Done a Shift',
+#                         "SESSION_IMAGE_BASE64": image_base64,
+#                         "USED_STATUS": 1,
+#                         "USED_STATUS_NAME": "In Use",
+#                     }
+#                     session_sql.add(Person_Check_Out(**json_insert))
+#                     error_code = 200
+#                     session_sql.commit()
+#                     array_return = get_check_out(date_insert)
+#                 except:
+#                     error_code = 201
+#
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#
+#     session_sql.close()
+#     return error_code, array_return
+#
+#
+# def get_json_person_check_in(person_id, date, session_process=1):
+#     # 1 check in morning
+#     # 2 check in afternoon
+#     # 3 check in evening
+#     session_sql = SessionSql()
+#     json_return = {}
+#     try:
+#         if person_id is not None and date is not None:
+#             date = datetime.datetime.strptime(date, '%d/%m/%Y')
+#             if int(session_process) == 1:
+#                 results_of_check = session_sql.query(Person_Check_In).filter(
+#                     Person_Check_In.PERSON_ID == person_id,
+#                     Person_Check_In.DATE == date,
+#                     Person_Check_In.USED_STATUS == 1
+#                 ).all()
+#                 if results_of_check is not None and len(results_of_check) > 0:
+#                     json_return['SESSION_NAME'] = getattr(results_of_check, 'SESSION_NAME')
+#                     json_return['SESSION_NAME_EN'] = getattr(results_of_check, 'SESSION_NAME_EN')
+#                     json_return['SESSION_STATUS_NAME'] = getattr(results_of_check, 'SESSION_STATUS_NAME')
+#                     json_return['SESSION_STATUS_NAME_EN'] = getattr(results_of_check, 'SESSION_STATUS_NAME_EN')
+#                     json_return['SESSION_IMAGE_BASE64'] = getattr(results_of_check, 'SESSION_IMAGE_BASE64')
+#                     json_return['USED_STATUS_NAME'] = getattr(results_of_check, 'USED_STATUS_NAME')
+#                 else:
+#                     pass
+#         else:
+#             pass
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#     session_sql.close()
+#     return json_return
+#
+#
+# def get_json_person_check_out(person_id, date, session_process=1):
+#     # 1 check in morning
+#     # 2 check in afternoon
+#     # 3 check in evening
+#     session_sql = SessionSql()
+#     json_return = {}
+#     try:
+#         if person_id is not None and date is not None:
+#             date = datetime.datetime.strptime(date, '%d/%m/%Y')
+#             if int(session_process) == 1:
+#                 results_of_check = session_sql.query(Person_Check_Out).filter(
+#                     Person_Check_Out.PERSON_ID == person_id,
+#                     Person_Check_Out.DATE == date,
+#                     Person_Check_Out.USED_STATUS == 1
+#                 ).all()
+#                 if results_of_check is not None and len(results_of_check) > 0:
+#                     json_return['SESSION_NAME'] = getattr(results_of_check, 'SESSION_NAME')
+#                     json_return['SESSION_NAME_EN'] = getattr(results_of_check, 'SESSION_NAME_EN')
+#                     json_return['SESSION_STATUS_NAME'] = getattr(results_of_check, 'SESSION_STATUS_NAME')
+#                     json_return['SESSION_STATUS_NAME_EN'] = getattr(results_of_check, 'SESSION_STATUS_NAME_EN')
+#                     json_return['SESSION_IMAGE_BASE64'] = getattr(results_of_check, 'SESSION_IMAGE_BASE64')
+#                     json_return['USED_STATUS_NAME'] = getattr(results_of_check, 'USED_STATUS_NAME')
+#                 else:
+#                     pass
+#         else:
+#             pass
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#     session_sql.close()
+#     return json_return
 
 
-def get_json_all_check_out():
-    # 1 check in morning
-    # 2 check in afternoon
-    # 3 check in evening
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        date = datetime.datetime.today().strftime('%Y-%d-%m')
-        results_of_check = session_sql.query(Person_Check_Out).filter(
-            # Person_Check_In.PERSON_ID == person_id,
-            Person_Check_In.DATE == date,
-            Person_Check_In.USED_STATUS == 1
-        ).all()
-        if results_of_check is not None and len(results_of_check) > 0:
-            for row in results_of_check:
-                json_return = {}
+# def get_json_all_check_in():
+#     # 1 check in morning
+#     # 2 check in afternoon
+#     # 3 check in evening
+#     session_sql = SessionSql()
+#     array_return = []
+#     try:
+#         date = datetime.datetime.today().strftime('%Y-%d-%m')
+#         results_of_check = session_sql.query(Person_Check_In).filter(
+#             # Person_Check_In.PERSON_ID == person_id,
+#             Person_Check_In.DATE == date,
+#             Person_Check_In.USED_STATUS == 1
+#         ).all()
+#         if results_of_check is not None and len(results_of_check) > 0:
+#             for row in results_of_check:
+#                 json_return = {}
+#
+#                 rs_person = session_sql.query(Person).filter(Person.PERSON_ID == getattr(row, 'PERSON_ID')).first()
+#                 json_return['PERSON_ID'] = int(getattr(rs_person, 'PERSON_ID'))
+#                 json_return['PERSON_ID_NUMBER'] = getattr(rs_person, 'PERSON_ID_NUMBER')
+#                 json_return['PERSON_FULL_NAME'] = get_full_name(
+#                     getattr(rs_person, 'PERSON_LAST_NAME'),
+#                     getattr(rs_person, 'PERSON_MIDDLE_NAME'),
+#                     getattr(rs_person, 'PERSON_FIRST_NAME')
+#                 )
+#                 json_return['TIME'] = getattr(row, 'TIME').strftime("%H:%M:%S")
+#                 json_return['SESSION_NAME'] = getattr(row, 'SESSION_NAME')
+#                 json_return['SESSION_NAME_EN'] = getattr(row, 'SESSION_NAME_EN')
+#                 json_return['SESSION_STATUS_NAME'] = getattr(row, 'SESSION_STATUS_NAME')
+#                 json_return['SESSION_STATUS_NAME_EN'] = getattr(row, 'SESSION_STATUS_NAME_EN')
+#                 json_return['SESSION_IMAGE_BASE64'] = getattr(row, 'SESSION_IMAGE_BASE64').decode("utf-8")
+#                 json_return['USED_STATUS_NAME'] = getattr(row, 'USED_STATUS_NAME')
+#                 array_return.append(json_return)
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#     session_sql.close()
+#     return array_return
 
-                rs_person = session_sql.query(Person).filter(Person.PERSON_ID == getattr(row, 'PERSON_ID')).first()
-                json_return['PERSON_ID'] = int(getattr(rs_person, 'PERSON_ID'))
-                json_return['PERSON_ID_NUMBER'] = getattr(rs_person, 'PERSON_ID_NUMBER')
-                json_return['PERSON_FULL_NAME'] = get_full_name(
-                    getattr(rs_person, 'PERSON_LAST_NAME'),
-                    getattr(rs_person, 'PERSON_MIDDLE_NAME'),
-                    getattr(rs_person, 'PERSON_FIRST_NAME')
-                )
-                json_return['TIME'] = getattr(row, 'TIME').strftime("%H:%M:%S")
-                json_return['SESSION_NAME'] = getattr(row, 'SESSION_NAME')
-                json_return['SESSION_NAME_EN'] = getattr(row, 'SESSION_NAME_EN')
-                json_return['SESSION_STATUS_NAME'] = getattr(row, 'SESSION_STATUS_NAME')
-                json_return['SESSION_STATUS_NAME_EN'] = getattr(row, 'SESSION_STATUS_NAME_EN')
-                json_return['SESSION_IMAGE_BASE64'] = getattr(row, 'SESSION_IMAGE_BASE64').decode("utf-8")
-                json_return['USED_STATUS_NAME'] = getattr(row, 'USED_STATUS_NAME')
-                array_return.append(json_return)
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-    session_sql.close()
-    return array_return
+
+# def get_json_all_check_out():
+#     # 1 check in morning
+#     # 2 check in afternoon
+#     # 3 check in evening
+#     session_sql = SessionSql()
+#     array_return = []
+#     try:
+#         date = datetime.datetime.today().strftime('%Y-%d-%m')
+#         results_of_check = session_sql.query(Person_Check_Out).filter(
+#             # Person_Check_In.PERSON_ID == person_id,
+#             Person_Check_In.DATE == date,
+#             Person_Check_In.USED_STATUS == 1
+#         ).all()
+#         if results_of_check is not None and len(results_of_check) > 0:
+#             for row in results_of_check:
+#                 json_return = {}
+#
+#                 rs_person = session_sql.query(Person).filter(Person.PERSON_ID == getattr(row, 'PERSON_ID')).first()
+#                 json_return['PERSON_ID'] = int(getattr(rs_person, 'PERSON_ID'))
+#                 json_return['PERSON_ID_NUMBER'] = getattr(rs_person, 'PERSON_ID_NUMBER')
+#                 json_return['PERSON_FULL_NAME'] = get_full_name(
+#                     getattr(rs_person, 'PERSON_LAST_NAME'),
+#                     getattr(rs_person, 'PERSON_MIDDLE_NAME'),
+#                     getattr(rs_person, 'PERSON_FIRST_NAME')
+#                 )
+#                 json_return['TIME'] = getattr(row, 'TIME').strftime("%H:%M:%S")
+#                 json_return['SESSION_NAME'] = getattr(row, 'SESSION_NAME')
+#                 json_return['SESSION_NAME_EN'] = getattr(row, 'SESSION_NAME_EN')
+#                 json_return['SESSION_STATUS_NAME'] = getattr(row, 'SESSION_STATUS_NAME')
+#                 json_return['SESSION_STATUS_NAME_EN'] = getattr(row, 'SESSION_STATUS_NAME_EN')
+#                 json_return['SESSION_IMAGE_BASE64'] = getattr(row, 'SESSION_IMAGE_BASE64').decode("utf-8")
+#                 json_return['USED_STATUS_NAME'] = getattr(row, 'USED_STATUS_NAME')
+#                 array_return.append(json_return)
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#     session_sql.close()
+#     return array_return
 
 
 def get_full_name(last, middle, first):
@@ -568,112 +568,112 @@ def insert_person(person_id_number, last, middle, first, image_base64, emb_base6
     return error_code, json_return
 
 
-def attendance_table(date_query):
-    session_sql = SessionSql()
-    array_return = []
-    try:
-        rs_persons = session_sql.query(Person).filter(
-            Person.USED_STATUS == 1
-        ).all()
-
-        if len(rs_persons) > 0:
-            for row in rs_persons:
-                json_return = {
-                    'PERSON_ID_NUMBER': getattr(row, 'PERSON_ID_NUMBER'),
-                    'PERSON_FULL_NAME': get_full_name(
-                        getattr(row, 'PERSON_LAST_NAME'),
-                        getattr(row, 'PERSON_MIDDLE_NAME'),
-                        getattr(row, 'PERSON_FIRST_NAME')
-                    ),
-                    'DATE': datetime.strptime(date_query, '%Y-%m-%d').strftime('%d/%m/%Y')
-                }
-                try:
-                    rs_check_in_session = session_sql.query(Person_Check_In).filter(
-                        Person_Check_In.PERSON_ID == getattr(row, 'PERSON_ID'),
-                        Person_Check_In.SESSION_ID == 1,
-                        Person_Check_In.DATE == date_query,
-                        Person_Check_In.USED_STATUS == 1,
-                    ).first()
-
-                    json_return['TIME_IN_1'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
-                    json_return['SESSION_NAME_EN_IN_1'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
-                    json_return['SESSION_STATUS_NAME_EN_IN_1'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
-                    json_return['SESSION_IMAGE_BASE64_IN_1'] = getattr(rs_check_in_session,
-                                                                       "SESSION_IMAGE_BASE64").decode('utf-8')
-                except:
-                    json_return['TIME_IN_1'] = '0:00:00'
-                    json_return['SESSION_NAME_EN_IN_1'] = 'Morning Shift'
-                    json_return['SESSION_STATUS_NAME_EN_IN_1'] = 'Not Yet Update'
-                    json_return['SESSION_IMAGE_BASE64_IN_1'] = ''
-
-                try:
-                    rs_check_in_session = session_sql.query(Person_Check_Out).filter(
-                        Person_Check_Out.PERSON_ID == getattr(row, 'PERSON_ID'),
-                        Person_Check_Out.SESSION_ID == 1,
-                        Person_Check_Out.DATE == date_query,
-                        Person_Check_Out.USED_STATUS == 1,
-                    ).first()
-
-                    json_return['TIME_OUT_1'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
-                    json_return['SESSION_NAME_EN_OUT_1'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
-                    json_return['SESSION_STATUS_NAME_EN_OUT_1'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
-                    json_return['SESSION_IMAGE_BASE64_OUT_1'] = getattr(rs_check_in_session,
-                                                                        "SESSION_IMAGE_BASE64").decode('utf-8')
-                except:
-                    json_return['TIME_OUT_1'] = '0:00:00'
-                    json_return['SESSION_NAME_EN_OUT_1'] = 'Morning Shift'
-                    json_return['SESSION_STATUS_NAME_EN_OUT_1'] = 'Not Yet Update'
-                    json_return['SESSION_IMAGE_BASE64_OUT_1'] = ''
-
-                try:
-                    rs_check_in_session = session_sql.query(Person_Check_In).filter(
-                        Person_Check_In.PERSON_ID == getattr(row, 'PERSON_ID'),
-                        Person_Check_In.SESSION_ID == 2,
-                        Person_Check_In.DATE == date_query,
-                        Person_Check_In.USED_STATUS == 1,
-                    ).first()
-
-                    json_return['TIME_IN_2'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
-                    json_return['SESSION_NAME_EN_IN_2'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
-                    json_return['SESSION_STATUS_NAME_EN_IN_2'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
-                    json_return['SESSION_IMAGE_BASE64_IN_2'] = getattr(rs_check_in_session,
-                                                                       "SESSION_IMAGE_BASE64").decode('utf-8')
-                except:
-                    json_return['TIME_IN_2'] = '0:00:00'
-                    json_return['SESSION_NAME_EN_IN_2'] = 'Afternoon Shift'
-                    json_return['SESSION_STATUS_NAME_EN_IN_2'] = 'Not Yet Update'
-                    json_return['SESSION_IMAGE_BASE64_IN_2'] = ''
-
-                try:
-                    rs_check_in_session = session_sql.query(Person_Check_Out).filter(
-                        Person_Check_Out.PERSON_ID == getattr(row, 'PERSON_ID'),
-                        Person_Check_Out.SESSION_ID == 2,
-                        Person_Check_Out.DATE == date_query,
-                        Person_Check_Out.USED_STATUS == 1,
-                    ).first()
-
-                    json_return['TIME_OUT_2'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
-                    json_return['SESSION_NAME_EN__OUT_2'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
-                    json_return['SESSION_STATUS_NAME_EN_OUT_2'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
-                    json_return['SESSION_IMAGE_BASE64_OUT_2'] = getattr(rs_check_in_session,
-                                                                        "SESSION_IMAGE_BASE64").decode('utf-8')
-                except:
-                    json_return['TIME_OUT_2'] = '0:00:00'
-                    json_return['SESSION_NAME_EN_OUT_2'] = 'Afternoon Shift'
-                    json_return['SESSION_STATUS_NAME_EN_OUT_2'] = 'Not Yet Update'
-                    json_return['SESSION_IMAGE_BASE64_OUT_2'] = ''
-
-                array_return.append(json_return)
-
-
-    except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
-        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-        print(e, exc_type, fname, exc_tb.tb_lineno)
-
-    session_sql.close()
-    print(date_query, array_return)
-    return array_return
+# def attendance_table(date_query):
+#     session_sql = SessionSql()
+#     array_return = []
+#     try:
+#         rs_persons = session_sql.query(Person).filter(
+#             Person.USED_STATUS == 1
+#         ).all()
+#
+#         if len(rs_persons) > 0:
+#             for row in rs_persons:
+#                 json_return = {
+#                     'PERSON_ID_NUMBER': getattr(row, 'PERSON_ID_NUMBER'),
+#                     'PERSON_FULL_NAME': get_full_name(
+#                         getattr(row, 'PERSON_LAST_NAME'),
+#                         getattr(row, 'PERSON_MIDDLE_NAME'),
+#                         getattr(row, 'PERSON_FIRST_NAME')
+#                     ),
+#                     'DATE': datetime.strptime(date_query, '%Y-%m-%d').strftime('%d/%m/%Y')
+#                 }
+#                 try:
+#                     rs_check_in_session = session_sql.query(Person_Check_In).filter(
+#                         Person_Check_In.PERSON_ID == getattr(row, 'PERSON_ID'),
+#                         Person_Check_In.SESSION_ID == 1,
+#                         Person_Check_In.DATE == date_query,
+#                         Person_Check_In.USED_STATUS == 1,
+#                     ).first()
+#
+#                     json_return['TIME_IN_1'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
+#                     json_return['SESSION_NAME_EN_IN_1'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
+#                     json_return['SESSION_STATUS_NAME_EN_IN_1'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
+#                     json_return['SESSION_IMAGE_BASE64_IN_1'] = getattr(rs_check_in_session,
+#                                                                        "SESSION_IMAGE_BASE64").decode('utf-8')
+#                 except:
+#                     json_return['TIME_IN_1'] = '0:00:00'
+#                     json_return['SESSION_NAME_EN_IN_1'] = 'Morning Shift'
+#                     json_return['SESSION_STATUS_NAME_EN_IN_1'] = 'Not Yet Update'
+#                     json_return['SESSION_IMAGE_BASE64_IN_1'] = ''
+#
+#                 try:
+#                     rs_check_in_session = session_sql.query(Person_Check_Out).filter(
+#                         Person_Check_Out.PERSON_ID == getattr(row, 'PERSON_ID'),
+#                         Person_Check_Out.SESSION_ID == 1,
+#                         Person_Check_Out.DATE == date_query,
+#                         Person_Check_Out.USED_STATUS == 1,
+#                     ).first()
+#
+#                     json_return['TIME_OUT_1'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
+#                     json_return['SESSION_NAME_EN_OUT_1'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
+#                     json_return['SESSION_STATUS_NAME_EN_OUT_1'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
+#                     json_return['SESSION_IMAGE_BASE64_OUT_1'] = getattr(rs_check_in_session,
+#                                                                         "SESSION_IMAGE_BASE64").decode('utf-8')
+#                 except:
+#                     json_return['TIME_OUT_1'] = '0:00:00'
+#                     json_return['SESSION_NAME_EN_OUT_1'] = 'Morning Shift'
+#                     json_return['SESSION_STATUS_NAME_EN_OUT_1'] = 'Not Yet Update'
+#                     json_return['SESSION_IMAGE_BASE64_OUT_1'] = ''
+#
+#                 try:
+#                     rs_check_in_session = session_sql.query(Person_Check_In).filter(
+#                         Person_Check_In.PERSON_ID == getattr(row, 'PERSON_ID'),
+#                         Person_Check_In.SESSION_ID == 2,
+#                         Person_Check_In.DATE == date_query,
+#                         Person_Check_In.USED_STATUS == 1,
+#                     ).first()
+#
+#                     json_return['TIME_IN_2'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
+#                     json_return['SESSION_NAME_EN_IN_2'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
+#                     json_return['SESSION_STATUS_NAME_EN_IN_2'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
+#                     json_return['SESSION_IMAGE_BASE64_IN_2'] = getattr(rs_check_in_session,
+#                                                                        "SESSION_IMAGE_BASE64").decode('utf-8')
+#                 except:
+#                     json_return['TIME_IN_2'] = '0:00:00'
+#                     json_return['SESSION_NAME_EN_IN_2'] = 'Afternoon Shift'
+#                     json_return['SESSION_STATUS_NAME_EN_IN_2'] = 'Not Yet Update'
+#                     json_return['SESSION_IMAGE_BASE64_IN_2'] = ''
+#
+#                 try:
+#                     rs_check_in_session = session_sql.query(Person_Check_Out).filter(
+#                         Person_Check_Out.PERSON_ID == getattr(row, 'PERSON_ID'),
+#                         Person_Check_Out.SESSION_ID == 2,
+#                         Person_Check_Out.DATE == date_query,
+#                         Person_Check_Out.USED_STATUS == 1,
+#                     ).first()
+#
+#                     json_return['TIME_OUT_2'] = getattr(rs_check_in_session, "TIME").strftime('%H:%M:%S')
+#                     json_return['SESSION_NAME_EN__OUT_2'] = getattr(rs_check_in_session, "SESSION_NAME_EN")
+#                     json_return['SESSION_STATUS_NAME_EN_OUT_2'] = getattr(rs_check_in_session, "SESSION_STATUS_NAME_EN")
+#                     json_return['SESSION_IMAGE_BASE64_OUT_2'] = getattr(rs_check_in_session,
+#                                                                         "SESSION_IMAGE_BASE64").decode('utf-8')
+#                 except:
+#                     json_return['TIME_OUT_2'] = '0:00:00'
+#                     json_return['SESSION_NAME_EN_OUT_2'] = 'Afternoon Shift'
+#                     json_return['SESSION_STATUS_NAME_EN_OUT_2'] = 'Not Yet Update'
+#                     json_return['SESSION_IMAGE_BASE64_OUT_2'] = ''
+#
+#                 array_return.append(json_return)
+#
+#
+#     except Exception as e:
+#         exc_type, exc_obj, exc_tb = sys.exc_info()
+#         fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#         print(e, exc_type, fname, exc_tb.tb_lineno)
+#
+#     session_sql.close()
+#     print(date_query, array_return)
+#     return array_return
 
 
 def person_attendance_table(person_id, month, year):
@@ -819,116 +819,116 @@ def person_attendance_table(person_id, month, year):
 
     session_sql.close()
     return json_return
-
-
-def insert_auto_attendance(person_id, image_base64):
-    error_code = 400
-    session_sql = SessionSql()
-    array_return = []
-    # try:
-    morning_time_start_in = datetime.now().replace(hour=6, minute=0, second=0).strftime("%H:%M:%S")
-
-    morning_time_stop_in = datetime.now().replace(hour=7, minute=30, second=0).strftime("%H:%M:%S")
-
-    morning_time_start_out = datetime.now().replace(hour=10, minute=45, second=0).strftime("%H:%M:%S")
-
-    morning_time_stop_out = datetime.now().replace(hour=11, minute=30, second=0).strftime("%H:%M:%S")
-
-    afternoon_time_start_in = datetime.now().replace(hour=12, minute=30, second=0).strftime("%H:%M:%S")
-
-    afternoon_time_stop_in = datetime.now().replace(hour=14, minute=0, second=0).strftime("%H:%M:%S")
-
-    afternoon_time_start_out = datetime.now().replace(hour=16, minute=0, second=0).strftime("%H:%M:%S")
-
-    afternoon_time_stop_out = datetime.now().replace(hour=18, minute=0, second=0).strftime("%H:%M:%S")
-
-    time_now = datetime.now().strftime("%H:%M:%S")
-
-    stats_get = 0
-
-    if time_now >= morning_time_start_in and time_now <= morning_time_stop_in:
-        stats_get = 1
-        session_id = 1
-        session_name = 'Buổi Sáng'
-        session_name_en = "Morning Shift"
-        object_get = Person_Check_In
-        status_name = 'Đã diểm danh'
-        status_name_en = 'Attended'
-    elif time_now >= morning_time_start_out and time_now <= morning_time_stop_out:
-        stats_get = 2
-        session_id = 1
-        session_name = 'Buổi Sáng'
-        session_name_en = "Morning Shift"
-        object_get = Person_Check_Out
-        status_name = 'Đã ra về'
-        status_name_en = 'Left'
-    elif time_now >= afternoon_time_start_in and time_now <= afternoon_time_stop_in:
-        stats_get = 1
-        session_id = 2
-        session_name = 'Buổi Chiều'
-        session_name_en = "Afternoon Shift"
-        object_get = Person_Check_In
-        status_name = 'Đã diểm danh'
-        status_name_en = 'Attended'
-    elif time_now >= afternoon_time_start_out and time_now <= afternoon_time_stop_out:
-        stats_get = 2
-        session_id = 2
-        session_name = 'Buổi Chiều'
-        session_name_en = "Afternoon Shift"
-        object_get = Person_Check_Out
-        status_name = 'Đã ra về'
-        status_name_en = 'Left'
-    else:
-        session_id = 3
-        session_name = 'Buổi Tối'
-        session_name_en = "Evening Shift"
-        status_name = 'Đã ra về'
-        status_name_en = 'Left'
-        object_get = Person_Check_In
-    time_insert = datetime.now().strftime("%H:%M:%S")
-    date_insert = date.today().strftime('%Y-%m-%d')
-
-    # rs_check = session_sql.query(object_get).filter(
-    #     object_get.PERSON_ID == person_id,
-    #     object_get.DATE == date_insert,
-    #     object_get.SESSION_ID == session_id).all()
-    # if len(rs_check) == 0:
-    json_insert = {
-        "PERSON_ID": person_id,
-        "DATE": date_insert,
-        "TIME": time_insert,
-        "SESSION_ID": session_id,
-        "SESSION_NAME": session_name,
-        "SESSION_NAME_EN": session_name_en,
-        "SESSION_STATUS_NAME": status_name,
-        "SESSION_STATUS_NAME_EN": status_name_en,
-        "SESSION_IMAGE_BASE64": image_base64,
-        "USED_STATUS": 1,
-        "USED_STATUS_NAME": "In Use",
-    }
-    print('json_insert', json_insert)
-
-    if person_id is not None and int(person_id) > 0:
-        try:
-            session_sql.add(object_get(**json_insert))
-            session_sql.commit()
-            error_code = 200
-            if stats_get == 1:
-                array_return = get_check_in(date_insert)
-            else:
-                array_return = get_check_out(date_insert)
-        except:
-            error_code = 201
-        print('Kiem tra try ex', error_code, array_return)
-
-    # except Exception as e:
-    #     exc_type, exc_obj, exc_tb = sys.exc_info()
-    #     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    #     print(e, exc_type, fname, exc_tb.tb_lineno)
-    print('error_code', error_code)
-    session_sql.close()
-
-    return error_code, array_return
+#
+#
+# def insert_auto_attendance(person_id, image_base64):
+#     error_code = 400
+#     session_sql = SessionSql()
+#     array_return = []
+#     # try:
+#     morning_time_start_in = datetime.now().replace(hour=6, minute=0, second=0).strftime("%H:%M:%S")
+#
+#     morning_time_stop_in = datetime.now().replace(hour=7, minute=30, second=0).strftime("%H:%M:%S")
+#
+#     morning_time_start_out = datetime.now().replace(hour=10, minute=45, second=0).strftime("%H:%M:%S")
+#
+#     morning_time_stop_out = datetime.now().replace(hour=11, minute=30, second=0).strftime("%H:%M:%S")
+#
+#     afternoon_time_start_in = datetime.now().replace(hour=12, minute=30, second=0).strftime("%H:%M:%S")
+#
+#     afternoon_time_stop_in = datetime.now().replace(hour=14, minute=0, second=0).strftime("%H:%M:%S")
+#
+#     afternoon_time_start_out = datetime.now().replace(hour=16, minute=0, second=0).strftime("%H:%M:%S")
+#
+#     afternoon_time_stop_out = datetime.now().replace(hour=18, minute=0, second=0).strftime("%H:%M:%S")
+#
+#     time_now = datetime.now().strftime("%H:%M:%S")
+#
+#     stats_get = 0
+#
+#     if time_now >= morning_time_start_in and time_now <= morning_time_stop_in:
+#         stats_get = 1
+#         session_id = 1
+#         session_name = 'Buổi Sáng'
+#         session_name_en = "Morning Shift"
+#         object_get = Person_Check_In
+#         status_name = 'Đã diểm danh'
+#         status_name_en = 'Attended'
+#     elif time_now >= morning_time_start_out and time_now <= morning_time_stop_out:
+#         stats_get = 2
+#         session_id = 1
+#         session_name = 'Buổi Sáng'
+#         session_name_en = "Morning Shift"
+#         object_get = Person_Check_Out
+#         status_name = 'Đã ra về'
+#         status_name_en = 'Left'
+#     elif time_now >= afternoon_time_start_in and time_now <= afternoon_time_stop_in:
+#         stats_get = 1
+#         session_id = 2
+#         session_name = 'Buổi Chiều'
+#         session_name_en = "Afternoon Shift"
+#         object_get = Person_Check_In
+#         status_name = 'Đã diểm danh'
+#         status_name_en = 'Attended'
+#     elif time_now >= afternoon_time_start_out and time_now <= afternoon_time_stop_out:
+#         stats_get = 2
+#         session_id = 2
+#         session_name = 'Buổi Chiều'
+#         session_name_en = "Afternoon Shift"
+#         object_get = Person_Check_Out
+#         status_name = 'Đã ra về'
+#         status_name_en = 'Left'
+#     else:
+#         session_id = 3
+#         session_name = 'Buổi Tối'
+#         session_name_en = "Evening Shift"
+#         status_name = 'Đã ra về'
+#         status_name_en = 'Left'
+#         object_get = Person_Check_In
+#     time_insert = datetime.now().strftime("%H:%M:%S")
+#     date_insert = date.today().strftime('%Y-%m-%d')
+#
+#     # rs_check = session_sql.query(object_get).filter(
+#     #     object_get.PERSON_ID == person_id,
+#     #     object_get.DATE == date_insert,
+#     #     object_get.SESSION_ID == session_id).all()
+#     # if len(rs_check) == 0:
+#     json_insert = {
+#         "PERSON_ID": person_id,
+#         "DATE": date_insert,
+#         "TIME": time_insert,
+#         "SESSION_ID": session_id,
+#         "SESSION_NAME": session_name,
+#         "SESSION_NAME_EN": session_name_en,
+#         "SESSION_STATUS_NAME": status_name,
+#         "SESSION_STATUS_NAME_EN": status_name_en,
+#         "SESSION_IMAGE_BASE64": image_base64,
+#         "USED_STATUS": 1,
+#         "USED_STATUS_NAME": "In Use",
+#     }
+#     print('json_insert', json_insert)
+#
+#     if person_id is not None and int(person_id) > 0:
+#         try:
+#             session_sql.add(object_get(**json_insert))
+#             session_sql.commit()
+#             error_code = 200
+#             if stats_get == 1:
+#                 array_return = get_check_in(date_insert)
+#             else:
+#                 array_return = get_check_out(date_insert)
+#         except:
+#             error_code = 201
+#         print('Kiem tra try ex', error_code, array_return)
+#
+#     # except Exception as e:
+#     #     exc_type, exc_obj, exc_tb = sys.exc_info()
+#     #     fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+#     #     print(e, exc_type, fname, exc_tb.tb_lineno)
+#     print('error_code', error_code)
+#     session_sql.close()
+#
+#     return error_code, array_return
 
 
 def data_attendances_date_month_year(month, year):
