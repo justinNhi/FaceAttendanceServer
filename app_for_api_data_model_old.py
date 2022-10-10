@@ -333,7 +333,6 @@ def api_registration():
                                                   face_emb)
             msg = 'Successful'
             print(error_code, js_return)
-            error_code = 200
 
     except Exception as e:
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -368,35 +367,19 @@ def return_date_auto_attendance():
 
     morning_time_start_in = datetime.now().replace(hour=6, minute=0, second=0).strftime("%H:%M:%S")
 
-    morning_time_stop_in = datetime.now().replace(hour=9, minute=40, second=0).strftime("%H:%M:%S")
+    morning_time_stop_in = datetime.now().replace(hour=7, minute=30, second=0).strftime("%H:%M:%S")
 
     morning_time_start_out = datetime.now().replace(hour=10, minute=45, second=0).strftime("%H:%M:%S")
 
-    morning_time_stop_out = datetime.now().replace(hour=12, minute=25, second=0).strftime("%H:%M:%S")
+    morning_time_stop_out = datetime.now().replace(hour=11, minute=30, second=0).strftime("%H:%M:%S")
 
     afternoon_time_start_in = datetime.now().replace(hour=12, minute=30, second=0).strftime("%H:%M:%S")
 
-    afternoon_time_stop_in = datetime.now().replace(hour=15, minute=55, second=0).strftime("%H:%M:%S")
+    afternoon_time_stop_in = datetime.now().replace(hour=14, minute=0, second=0).strftime("%H:%M:%S")
 
     afternoon_time_start_out = datetime.now().replace(hour=16, minute=0, second=0).strftime("%H:%M:%S")
 
     afternoon_time_stop_out = datetime.now().replace(hour=18, minute=0, second=0).strftime("%H:%M:%S")
-
-    # morning_time_start_in = datetime.now().replace(hour=6, minute=0, second=0).strftime("%H:%M:%S")
-    #
-    # morning_time_stop_in = datetime.now().replace(hour=7, minute=30, second=0).strftime("%H:%M:%S")
-    #
-    # morning_time_start_out = datetime.now().replace(hour=10, minute=45, second=0).strftime("%H:%M:%S")
-    #
-    # morning_time_stop_out = datetime.now().replace(hour=11, minute=30, second=0).strftime("%H:%M:%S")
-    #
-    # afternoon_time_start_in = datetime.now().replace(hour=12, minute=30, second=0).strftime("%H:%M:%S")
-    #
-    # afternoon_time_stop_in = datetime.now().replace(hour=14, minute=0, second=0).strftime("%H:%M:%S")
-    #
-    # afternoon_time_start_out = datetime.now().replace(hour=16, minute=0, second=0).strftime("%H:%M:%S")
-    #
-    # afternoon_time_stop_out = datetime.now().replace(hour=18, minute=0, second=0).strftime("%H:%M:%S")
 
     datatime_now = datetime.now()
 
@@ -593,7 +576,7 @@ def return_history():
     js_return = {'data_send': json_send}
     return js_return
 
-# gọi trực tiếp từ JS của DashBoard mới
+# # gọi trực tiếp từ JS của DashBoard mới
 # @app.route('/return_history', methods=['POST'])
 # def return_history():
 #     error_code = 400

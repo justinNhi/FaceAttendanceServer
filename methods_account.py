@@ -69,9 +69,8 @@ Person_Account_columns = Person_Account.__table__.columns.keys()
 Account_Function = Base.classes.ACCOUNT_FUNCTION
 Account_Function_columns = Account_Function.__table__.columns.keys()
 
-
-
 from datetime import date, timedelta, datetime
+
 
 def get_full_name(last, middle, first):
     if middle is not None or middle != '':
@@ -104,7 +103,7 @@ def get_person(person_id):
     ).first()
     json_person = {}
     if rs_person is not None:
-        json_person ={
+        json_person = {
             'PERSON_ID': str(getattr(rs_person, "PERSON_ID")),
             'PERSON_ID_NUMBER': getattr(rs_person, "PERSON_ID_NUMBER"),
             'PERSON_FULL_NAME': get_full_name(
@@ -117,6 +116,7 @@ def get_person(person_id):
     session_sql.close()
     return json_person
 
+
 def get_account_function(person_id):
     session_sql = SessionSql()
     rs_account_functions = session_sql.query(
@@ -125,22 +125,26 @@ def get_account_function(person_id):
         Account_Function.USED_STATUS != 0,
         Account_Function.PERSON_ID == person_id,
     ).all()
+
+    # filter by user != 0 and by person id
+
     array_functions = []
-    set_function_ids = []
-    if len(rs_account_functions) > 0:
+    set_function_ids = []  # set of id
+
+    if len(rs_account_functions) > 0:  # loop for set of id
         for row in rs_account_functions:
             set_function_ids.append(row.FUNCTION_ID)
-
     set_function_ids = set(set_function_ids)
 
     for function_id in set_function_ids:
         rs_account_functions = session_sql.query(Account_Function).filter(
-                Account_Function.USED_STATUS != 0,
-                Account_Function.PERSON_ID == person_id,
-                Account_Function.FUNCTION_ID == function_id,
+            Account_Function.USED_STATUS != 0,
+            Account_Function.PERSON_ID == person_id,
+            Account_Function.FUNCTION_ID == function_id,
         )
+
         json_function = {
-            "FUNCTION_ID" : str(function_id),
+            "FUNCTION_ID": str(function_id),
             "FUNCTION_NAME": getattr(rs_account_functions.first(), 'FUNCTION_NAME'),
             "FUNCTION_URL": str(getattr(rs_account_functions.first(), 'FUNCTION_URL')),
             "FUNCTION_SEGMENT": getattr(rs_account_functions.first(), 'FUNCTION_SEGMENT'),
@@ -148,6 +152,8 @@ def get_account_function(person_id):
             "FUNCTION_NOTE": getattr(rs_account_functions.first(), 'FUNCTION_NOTE'),
             "FUNCTION_INCLUDE_CHILDREN": str(getattr(rs_account_functions.first(), 'FUNCTION_INCLUDE_CHILDREN')),
         }
+        # function of parent
+
         array_functions_children = []
         if int(getattr(rs_account_functions.first(), 'FUNCTION_INCLUDE_CHILDREN')) != 0:
             for row_rs_account_functions in rs_account_functions.all():
@@ -163,45 +169,54 @@ def get_account_function(person_id):
                 array_functions_children.append(json_function_child)
             json_function['functions_children'] = array_functions_children
         array_functions.append(json_function)
+        # children functions
+
         print(array_functions)
     session_sql.close()
     return array_functions
 
 
-def check_account_log_in(account_name, account_password):
-    account_password_base64 = base64.b64encode(bytes(account_password, 'utf-8'))
+def check_account_log_in(account_name = None, account_password = None):
     session_sql = SessionSql()
-    rs_person_account = session_sql.query(Person_Account).filter(
-        Person_Account.USED_STATUS != 0,
-        Person_Account.PERSON_ACCOUNT_NAME == account_name,
-        Person_Account.PERSON_PASSWORD == account_password_base64,
-    ).first()
-    json_person_account = {}
-    if rs_person_account is not None:
+    if account_name is not None and account_password is not None:
+        account_password_base64 = base64.b64encode(bytes(account_password, 'utf-8'))
+        rs_person_account = session_sql.query(Person_Account).filter(
+            Person_Account.USED_STATUS != 0,
+            Person_Account.PERSON_ACCOUNT_NAME == account_name,
+            Person_Account.PERSON_PASSWORD == account_password_base64,
+        ).first()
+        json_person_account = {}
+        if rs_person_account is not None:
+            json_person_account = {
+                'PERSON': get_person(getattr(rs_person_account, 'PERSON_ID')),
+                'ACCOUNT_TYPE_ID': str(getattr(rs_person_account, 'ACCOUNT_TYPE_ID')),
+                'ACCOUNT_TYPE_NAME': getattr(rs_person_account, 'ACCOUNT_TYPE_NAME'),
+                'ACCOUNT_TYPE_NAME_EN': getattr(rs_person_account, 'ACCOUNT_TYPE_NAME_EN'),
+                'ACCOUNT_TOKEN': getattr(rs_person_account, 'ACCOUNT_TOKEN').decode('utf-8'),
+                'FUNCTION': get_account_function(getattr(rs_person_account, 'PERSON_ID')),
+            }
+    else:
         json_person_account = {
-            'PERSON': get_person(getattr(rs_person_account, 'PERSON_ID')),
-            'ACCOUNT_TYPE_ID': str(getattr(rs_person_account, 'ACCOUNT_TYPE_ID')),
-            'ACCOUNT_TYPE_NAME': getattr(rs_person_account, 'ACCOUNT_TYPE_NAME'),
-            'ACCOUNT_TYPE_NAME_EN': getattr(rs_person_account, 'ACCOUNT_TYPE_NAME_EN'),
-            'ACCOUNT_TOKEN': getattr(rs_person_account, 'ACCOUNT_TOKEN').decode('utf-8'),
-            'FUNCTION': get_account_function(getattr(rs_person_account, 'PERSON_ID')),
+            'PERSON': None,
+            'ACCOUNT_TYPE_ID': None,
+            'ACCOUNT_TYPE_NAME': None,
+            'ACCOUNT_TYPE_NAME_EN': None,
+            'ACCOUNT_TOKEN': None,
+            'FUNCTION': None
         }
-        print('FUNCTION', json_person_account["FUNCTION"])
+    print('FUNCTION', json_person_account["FUNCTION"])
     session_sql.close()
     return json_person_account
-
 
 # if __name__ == "__main__":
 #     rs_test = check_log_in('lehoangnhi', 'lehoangnhi24a3posct')
 #
 #     print(rs_test)
 
-    # for m in [1,2,3,4,5,6,7,8,9,10,11,12]:
-    #     test_insert_check_in_check_out(m, 2021)
-    # data = datetime.today()
-    # end_date = data + timedelta(days=2)
-    # print(end_date)
-    # print(data.weekday())
-    # print(end_date.weekday())
-
-
+# for m in [1,2,3,4,5,6,7,8,9,10,11,12]:
+#     test_insert_check_in_check_out(m, 2021)
+# data = datetime.today()
+# end_date = data + timedelta(days=2)
+# print(end_date)
+# print(data.weekday())
+# print(end_date.weekday())
